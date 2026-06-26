@@ -13,14 +13,20 @@ async function verifyOnce(run: number): Promise<void> {
     throw new Error(`Run ${run}: missing page title`);
   }
 
-  const chunkMatch = html.match(/app\/page-[a-f0-9]+\.js/);
+  const chunkMatch = html.match(/\/_next\/static\/chunks\/app\/page-[a-f0-9]+\.js/);
   if (!chunkMatch) throw new Error(`Run ${run}: missing page chunk reference`);
 
-  const jsRes = await fetch(`${BASE}/_next/static/chunks/${chunkMatch[0]}`);
+  const jsRes = await fetch(`${BASE}${chunkMatch[0]}`);
   if (!jsRes.ok) throw new Error(`Run ${run}: cannot load page chunk`);
   const js = await jsRes.text();
 
-  const bundleChecks = ["Project Map", "procurement-map", "governmentLevels", "Methodology"];
+  const bundleChecks = [
+    "Project Map",
+    "procurement-map",
+    "governmentLevels",
+    "Methodology",
+    "filters & navigation",
+  ];
   for (const token of bundleChecks) {
     if (!js.includes(token)) {
       throw new Error(`Run ${run}: bundle missing ${token}`);

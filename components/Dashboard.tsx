@@ -15,13 +15,13 @@ import NotableProjects from "./NotableProjects";
 import ProcurementMap from "./ProcurementMap";
 import TierCoverage from "./TierCoverage";
 import SampleDataBanner from "./SampleDataBanner";
+import FilterPanel from "./FilterPanel";
 import { RiskMethodology, DataSources, EraKey } from "./Methodology";
-import { GOVERNMENT_ERAS, RED_FLAG_DEFINITIONS } from "@/lib/constants";
-import { GOVERNMENT_LEVEL_LABELS } from "@/lib/government";
-import { applyFilters, contractsToCSV } from "@/lib/filters";
+import { RED_FLAG_DEFINITIONS } from "@/lib/constants";
+import { applyFilters, contractsToCSV, getRangeWarning } from "@/lib/filters";
 import { loadSampleContracts, parseCSV, parseJSON } from "@/lib/data-loader";
 import { formatGBP } from "@/lib/format";
-import type { Contract, Filters, GovernmentLevel, PageSection } from "@/lib/types";
+import type { Contract, Filters, PageSection } from "@/lib/types";
 
 const SECTIONS: PageSection[] = [
   "Overview",
@@ -34,21 +34,6 @@ const SECTIONS: PageSection[] = [
   "Methodology & Data",
 ];
 
-const GOVERNMENT_LEVELS: GovernmentLevel[] = [
-  "central",
-  "local",
-  "scotland",
-  "wales",
-  "northern_ireland",
-];
-
-const SORT_OPTIONS = [
-  "Highest value",
-  "Newest first",
-  "Highest risk score",
-  "Most red flags",
-] as const;
-
 export default function Dashboard() {
   const [allContracts, setAllContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +44,7 @@ export default function Dashboard() {
   const [uploading, setUploading] = useState(false);
   const [deptChoice, setDeptChoice] = useState("All departments");
   const [tableKey, setTableKey] = useState(0);
+  const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
 
   const bounds = useMemo(() => {
     if (!allContracts.length) {
@@ -110,10 +96,22 @@ export default function Dashboard() {
     [allContracts]
   );
 
+  const verifiedCount = useMemo(
+    () => allContracts.filter((c) => !c.is_sample).length,
+    [allContracts]
+  );
+
+  const demoCount = useMemo(
+    () => allContracts.filter((c) => c.is_sample).length,
+    [allContracts]
+  );
+
   const filtered = useMemo(
     () => applyFilters(allContracts, filters),
     [allContracts, filters]
   );
+
+  const rangeWarning = useMemo(() => getRangeWarning(filters), [filters]);
 
   const updateFilter = useCallback(
     <K extends keyof Filters>(key: K, value: Filters[K]) => {
@@ -212,6 +210,27 @@ export default function Dashboard() {
         b.red_flag_count - a.red_flag_count || b.risk_score - a.risk_score
     );
 
+  const filterPanelProps = {
+    section,
+    sections: SECTIONS,
+    onSectionChange: (s: PageSection) => {
+      setSection(s);
+      setMobilePanelOpen(false);
+    },
+    dataMode,
+    onSampleMode: resetToSample,
+    onUploadMode: () => setDataMode("upload"),
+    onUpload: handleUpload,
+    uploading,
+    filters,
+    bounds,
+    departments,
+    filteredCount: filtered.length,
+    totalCount: allContracts.length,
+    rangeWarning,
+    onFilterChange: updateFilter,
+  };
+
   if (loading && !allContracts.length) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gov-surface">
@@ -223,200 +242,19 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-white">
       <div className="mx-auto flex max-w-[1440px] gap-6 px-4 py-6 lg:px-6">
-        {/* Sidebar */}
+        {/* Desktop sidebar */}
         <aside className="hidden w-72 shrink-0 lg:block">
-          <div className="sticky top-6 space-y-4 rounded-xl border border-gov-border bg-gov-surface p-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-gov-slate">
-              Navigation
-            </h2>
-            <nav className="space-y-1">
-              {SECTIONS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSection(s)}
-                  className={`nav-item ${section === s ? "nav-item-active" : "nav-item-inactive"}`}
-                >
-                  {s}
-                </button>
-              ))}
-            </nav>
-
-            <hr className="border-gov-border" />
-
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-gov-slate">
-              Data Source
-            </h2>
-            <div className="space-y-2 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={dataMode === "sample"}
-                  onChange={resetToSample}
-                />
-                Sample data
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={dataMode === "upload"}
-                  onChange={() => setDataMode("upload")}
-                />
-                Upload real data
-              </label>
-              {dataMode === "upload" && (
-                <input
-                  type="file"
-                  accept=".csv,.json,.jsonl"
-                  className="w-full text-xs"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handleUpload(f);
-                  }}
-                  disabled={uploading}
-                />
-              )}
-            </div>
-
-            <hr className="border-gov-border" />
-
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-gov-slate">
-              Filters
-            </h2>
-
-            <div className="space-y-3 text-sm">
-              <div>
-                <label className="mb-1 block text-xs text-gov-slate">Government level</label>
-                <select
-                  multiple
-                  className="h-28 w-full rounded-lg border border-gov-border px-2 py-1"
-                  value={filters.governmentLevels}
-                  onChange={(e) =>
-                    updateFilter(
-                      "governmentLevels",
-                      Array.from(e.target.selectedOptions, (o) => o.value as GovernmentLevel)
-                    )
-                  }
-                >
-                  {GOVERNMENT_LEVELS.map((level) => (
-                    <option key={level} value={level}>
-                      {GOVERNMENT_LEVEL_LABELS[level]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs text-gov-slate">Department</label>
-                <select
-                  multiple
-                  className="h-24 w-full rounded-lg border border-gov-border px-2 py-1"
-                  value={filters.departments}
-                  onChange={(e) =>
-                    updateFilter(
-                      "departments",
-                      Array.from(e.target.selectedOptions, (o) => o.value)
-                    )
-                  }
-                >
-                  {departments.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs text-gov-slate">
-                  Year: {filters.yearMin} – {filters.yearMax}
-                </label>
-                <input
-                  type="range"
-                  min={bounds.yearMin}
-                  max={bounds.yearMax}
-                  value={filters.yearMin}
-                  className="w-full"
-                  onChange={(e) =>
-                    updateFilter("yearMin", parseInt(e.target.value))
-                  }
-                />
-                <input
-                  type="range"
-                  min={bounds.yearMin}
-                  max={bounds.yearMax}
-                  value={filters.yearMax}
-                  className="w-full"
-                  onChange={(e) =>
-                    updateFilter("yearMax", parseInt(e.target.value))
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs text-gov-slate">Search</label>
-                <input
-                  type="text"
-                  placeholder="Title, supplier…"
-                  className="w-full rounded-lg border border-gov-border px-3 py-2"
-                  value={filters.search}
-                  onChange={(e) => updateFilter("search", e.target.value)}
-                />
-              </div>
-
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={filters.flaggedOnly}
-                  onChange={(e) => updateFilter("flaggedOnly", e.target.checked)}
-                />
-                Flagged only
-              </label>
-
-              <div>
-                <label className="mb-1 block text-xs text-gov-slate">Government era</label>
-                <select
-                  className="w-full rounded-lg border border-gov-border px-2 py-2"
-                  value={filters.era}
-                  onChange={(e) => updateFilter("era", e.target.value)}
-                >
-                  <option value="All">All</option>
-                  {Object.keys(GOVERNMENT_ERAS).map((e) => (
-                    <option key={e} value={e}>
-                      {e}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs text-gov-slate">Sort by</label>
-                <select
-                  className="w-full rounded-lg border border-gov-border px-2 py-2"
-                  value={filters.sortBy}
-                  onChange={(e) =>
-                    updateFilter("sortBy", e.target.value as Filters["sortBy"])
-                  }
-                >
-                  {SORT_OPTIONS.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <p className="text-xs text-gov-slate">
-              Showing <strong>{filtered.length.toLocaleString()}</strong> of{" "}
-              <strong>{allContracts.length.toLocaleString()}</strong> contracts
-            </p>
+          <div className="sticky top-6">
+            <FilterPanel {...filterPanelProps} />
           </div>
         </aside>
 
         {/* Main */}
         <main className="min-w-0 flex-1 space-y-6">
           <Header />
-          {dataMode === "sample" && <SampleDataBanner />}
+          {dataMode === "sample" && (
+            <SampleDataBanner verifiedCount={verifiedCount} demoCount={demoCount} />
+          )}
 
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -424,18 +262,25 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Mobile nav */}
-          <select
-            className="w-full rounded-lg border border-gov-border px-3 py-2 lg:hidden"
-            value={section}
-            onChange={(e) => setSection(e.target.value as PageSection)}
-          >
-            {SECTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+          {/* Mobile filters & navigation */}
+          <div className="lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMobilePanelOpen((o) => !o)}
+              className="flex w-full items-center justify-between rounded-lg border border-gov-border bg-gov-surface px-4 py-3 text-sm font-medium text-gov-navy"
+              aria-expanded={mobilePanelOpen}
+            >
+              <span>{mobilePanelOpen ? "Hide" : "Show"} filters &amp; navigation</span>
+              <span className="text-gov-slate">
+                {filtered.length.toLocaleString()} / {allContracts.length.toLocaleString()}
+              </span>
+            </button>
+            {mobilePanelOpen && (
+              <div className="mt-3">
+                <FilterPanel {...filterPanelProps} />
+              </div>
+            )}
+          </div>
 
           {section === "Overview" && (
             <>
@@ -467,8 +312,8 @@ export default function Dashboard() {
               <h2 className="section-title">Project Map</h2>
               <p className="text-sm text-slate-600">
                 Interactive map of procurement by buyer location across central,
-                local and devolved UK governments. Filters in the sidebar update
-                markers in real time. Click a marker or table row for details.
+                local and devolved UK governments. Filters update markers in real
+                time. Click a marker or table row for details.
               </p>
               <TierCoverage contracts={filtered} />
               <ProcurementMap

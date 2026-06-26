@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   deriveGovernmentLevel,
+  deriveNoticeUrl,
   filterByGovernmentLevel,
   countByGovernmentLevel,
   contractsWithLocation,
@@ -97,6 +98,88 @@ describe("countByGovernmentLevel", () => {
     assert.equal(counts.scotland, 1);
     assert.equal(counts.wales, 1);
     assert.equal(counts.northern_ireland, 1);
+  });
+});
+
+describe("deriveNoticeUrl", () => {
+  it("uses explicit portal URL when provided", () => {
+    const url = deriveNoticeUrl(
+      {
+        ocid: "x",
+        notice_id: "PCS-123",
+        title: "t",
+        buyer: "Scottish Government",
+        supplier: "s",
+        award_date: "2024-01-01",
+        value_gbp: 1,
+        cpv_code: "45000000",
+        category: "c",
+        description: "d",
+        contracts_finder_url: "https://www.publiccontractsscotland.gov.uk/search/show/search_view.aspx?ID=JAN123",
+      },
+      "scotland"
+    );
+    assert.equal(
+      url,
+      "https://www.publiccontractsscotland.gov.uk/search/show/search_view.aspx?ID=JAN123"
+    );
+  });
+
+  it("falls back to portal home for devolved notice IDs without URLs", () => {
+    const url = deriveNoticeUrl(
+      {
+        ocid: "x",
+        notice_id: "PCS-ONLY-ID",
+        title: "t",
+        buyer: "Welsh Government",
+        supplier: "s",
+        award_date: "2024-01-01",
+        value_gbp: 1,
+        cpv_code: "45000000",
+        category: "c",
+        description: "d",
+      },
+      "wales"
+    );
+    assert.equal(url, DATA_SOURCES.sell2wales);
+  });
+
+  it("builds Contracts Finder URL for central notices", () => {
+    const url = deriveNoticeUrl(
+      {
+        ocid: "x",
+        notice_id: "CF-12345",
+        title: "t",
+        buyer: "HM Treasury",
+        supplier: "s",
+        award_date: "2024-01-01",
+        value_gbp: 1,
+        cpv_code: "72000000",
+        category: "c",
+        description: "d",
+      },
+      "central"
+    );
+    assert.equal(url, "https://www.contractsfinder.service.gov.uk/Notice/CF-12345");
+  });
+
+  it("does not fabricate Contracts Finder URL for demo IDs", () => {
+    const url = deriveNoticeUrl(
+      {
+        ocid: "x",
+        notice_id: "DEMO-0001",
+        title: "t",
+        buyer: "HM Treasury",
+        supplier: "s",
+        award_date: "2024-01-01",
+        value_gbp: 1,
+        cpv_code: "72000000",
+        category: "c",
+        description: "d",
+      },
+      "central"
+    );
+    assert.equal(url, DATA_SOURCES.contracts_finder);
   });
 });
 

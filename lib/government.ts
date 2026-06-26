@@ -83,6 +83,25 @@ export function deriveGovernmentLevel(buyer: string): GovernmentLevel {
   return "central";
 }
 
+export function deriveNoticeUrl(
+  row: RawContract,
+  level: GovernmentLevel
+): string {
+  if (row.contracts_finder_url?.startsWith("http")) {
+    return row.contracts_finder_url;
+  }
+  const noticeId = row.notice_id ?? "";
+  if (
+    (level === "central" || level === "local") &&
+    noticeId &&
+    !noticeId.startsWith("DEMO-") &&
+    !noticeId.startsWith("N/A")
+  ) {
+    return `https://www.contractsfinder.service.gov.uk/Notice/${noticeId}`;
+  }
+  return deriveDataSource(level);
+}
+
 export function deriveDataSource(level: GovernmentLevel): string {
   switch (level) {
     case "scotland":
