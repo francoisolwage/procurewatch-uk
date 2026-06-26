@@ -1,7 +1,7 @@
 import Papa from "papaparse";
-import { DEPARTMENT_TAGS } from "./constants";
+import { enrichContract } from "./government";
 import { computeRiskScores } from "./risk-scoring";
-import type { Contract, RawContract } from "./types";
+import type { Contract, GovernmentLevel, RawContract } from "./types";
 
 const COLUMN_MAP: Record<string, string[]> = {
   ocid: ["ocid", "OCID", "release_id"],
@@ -14,6 +14,12 @@ const COLUMN_MAP: Record<string, string[]> = {
   cpv_code: ["cpv_code", "cpv", "CPV", "main_cpv"],
   category: ["category", "Category", "cpv_description"],
   description: ["description", "Description", "summary", "keywords"],
+  government_level: ["government_level", "Government Level", "tier"],
+  location_lat: ["location_lat", "lat", "latitude"],
+  location_lng: ["location_lng", "lng", "longitude"],
+  location_locality: ["location_locality", "locality", "location"],
+  data_source: ["data_source", "source", "portal"],
+  is_sample: ["is_sample", "sample"],
 };
 
 function normalizeRow(row: Record<string, string>): RawContract | null {
@@ -38,7 +44,7 @@ function normalizeRow(row: Record<string, string>): RawContract | null {
     return null;
   }
 
-  return {
+  const raw: RawContract = {
     ocid: mapped.ocid ?? `unknown-${Date.now()}`,
     notice_id: mapped.notice_id ?? `N/A`,
     title: mapped.title,
@@ -49,11 +55,17 @@ function normalizeRow(row: Record<string, string>): RawContract | null {
     cpv_code: mapped.cpv_code ?? "",
     category: mapped.category ?? "Uncategorised",
     description: mapped.description ?? mapped.title,
-    department_tag: DEPARTMENT_TAGS[mapped.buyer] ?? "Other",
-    contracts_finder_url: mapped.notice_id
-      ? `https://www.contractsfinder.service.gov.uk/Notice/${mapped.notice_id}`
-      : undefined,
+    department_tag: mapped.department_tag,
+    contracts_finder_url: mapped.contracts_finder_url,
+    government_level: mapped.government_level as GovernmentLevel | undefined,
+    location_lat: mapped.location_lat ? parseFloat(mapped.location_lat) : undefined,
+    location_lng: mapped.location_lng ? parseFloat(mapped.location_lng) : undefined,
+    location_locality: mapped.location_locality,
+    data_source: mapped.data_source,
+    is_sample: mapped.is_sample === "true" || mapped.is_sample === "1",
   };
+
+  return enrichContract(raw, { isSample: raw.is_sample });
 }
 
 export function parseCSV(text: string): Contract[] {
@@ -62,7 +74,7 @@ export function parseCSV(text: string): Contract[] {
     skipEmptyLines: true,
   });
   const raw = parsed.data.map(normalizeRow).filter((r): r is RawContract => r !== null);
-  return computeRiskScores(raw);
+  return computeRiskScores(raw.map((r) => ({ ...r, is_sample: false })));
 }
 
 export function parseJSON(text: string): Contract[] {
@@ -71,7 +83,7 @@ export function parseJSON(text: string): Contract[] {
   const raw = rows
     .map((row) => normalizeRow(row as Record<string, string>))
     .filter((r): r is RawContract => r !== null);
-  return computeRiskScores(raw);
+  return computeRiskScores(raw.map((r) => ({ ...r, is_sample: false })));
 }
 
 export async function loadSampleContracts(): Promise<Contract[]> {

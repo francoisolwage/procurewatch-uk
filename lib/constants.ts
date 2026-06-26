@@ -136,4 +136,15 @@ export const DATA_SOURCES = {
   contracts_finder: "https://www.contractsfinder.service.gov.uk/",
   ocds_bulk: "https://data.open-contracting.org/en/publication/143",
   ocds_api: "https://www.contractsfinder.service.gov.uk/api/rest/get",
+  public_contracts_scotland: "https://www.publiccontractsscotland.gov.uk/",
+  sell2wales: "https://www.sell2wales.gov.wales/",
+  etenders_ni: "https://etendersni.gov.uk/",
+};
+
+export const DATA_SOURCE_LABELS: Record<string, string> = {
+  [DATA_SOURCES.contracts_finder]: "Contracts Finder (UK central & local)",
+  [DATA_SOURCES.public_contracts_scotland]: "Public Contracts Scotland",
+  [DATA_SOURCES.sell2wales]: "Sell2Wales",
+  [DATA_SOURCES.etenders_ni]: "eTendersNI",
+  [DATA_SOURCES.ocds_bulk]: "OCDS Bulk Data (UK)",
 };

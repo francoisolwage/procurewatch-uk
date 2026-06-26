@@ -1,4 +1,5 @@
 import { GOVERNMENT_ERAS } from "./constants";
+import { filterByGovernmentLevel } from "./government";
 import type { Contract, Filters } from "./types";
 
 export function getGovernmentEra(dateStr: string): string {
@@ -15,6 +16,8 @@ export function applyFilters(contracts: Contract[], filters: Filters): Contract[
   if (filters.departments.length) {
     result = result.filter((c) => filters.departments.includes(c.buyer));
   }
+
+  result = filterByGovernmentLevel(result, filters.governmentLevels);
 
   result = result.filter((c) => {
     const year = new Date(c.award_date).getFullYear();

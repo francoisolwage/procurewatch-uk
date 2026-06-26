@@ -1,8 +1,8 @@
 # ProcureWatch UK
 
-UK Public Procurement Accountability Dashboard — transparent scrutiny of government spending using Contracts Finder / OCDS data.
+UK public procurement transparency dashboard — central government, local authorities, and devolved administrations (Scotland, Wales, Northern Ireland) with searchable data, risk scoring, and an interactive project map.
 
-Built with **Next.js**, **TypeScript**, **Tailwind CSS**, and **Recharts**. Deploys natively to Vercel.
+Built with **Next.js**, **TypeScript**, **Tailwind CSS**, **Recharts**, and **Leaflet**.
 
 ## Quick Start
 
@@ -13,47 +13,39 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
-## Build
+## Build & Test
 
 ```bash
-npm run build    # preprocesses sample data + builds Next.js
-npm start        # production server
+npm run build
+npm test
+npm start
 ```
 
 ## Features
 
-- **Overview** — Spend by year with PM/government era colour-coding, key metrics, searchable contract table
-- **All Contracts** — Sortable, filterable, paginated table with risk scores
-- **By Department** — Department spend charts and filtered contracts
-- **Legal Services / Lawfare Tracker** — Legal spend analysis (CPV 791xxxx + keywords)
-- **Red Flags Explorer** — Duplicate risk, repeated consultancy, value spike detection
-- **Notable Projects** — Curated high-cost/controversial infrastructure projects
-- **CSV export** — Download any filtered view
-- **Real data upload** — Switch from sample to OCDS bulk CSV/JSONL
+- **Multi-tier coverage** — Central, local (England), Scotland, Wales, Northern Ireland
+- **Interactive project map** — Buyer-location markers, filter-reactive, click for details
+- **Official portal attribution** — Contracts Finder, Public Contracts Scotland, Sell2Wales, eTendersNI
+- **Sample vs real data** — Demonstration data clearly labelled; upload official CSV/JSONL exports
+- **Risk scoring** — Duplicate, consultancy, value spike flags
+- **All dashboard sections** — Overview, Project Map, contracts table, legal tracker, red flags, notable projects
 
-## Deploy to Vercel
+## Data sources
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/francoisolwage/procurewatch-uk)
+| Portal | Coverage |
+|--------|----------|
+| [Contracts Finder](https://www.contractsfinder.service.gov.uk/) | UK central & local |
+| [Public Contracts Scotland](https://www.publiccontractsscotland.gov.uk/) | Scotland |
+| [Sell2Wales](https://www.sell2wales.gov.wales/) | Wales |
+| [eTendersNI](https://etendersni.gov.uk/) | Northern Ireland |
 
-Or via CLI:
+## Deploy
+
+**Live:** [procurewatch-uk.vercel.app](https://procurewatch-uk.vercel.app)
 
 ```bash
 npx vercel --prod
 ```
-
-**Live:** [procurewatch-uk.vercel.app](https://procurewatch-uk.vercel.app)
-
-## Regenerate Sample Data
-
-```bash
-python data/generate_sample_data.py
-npm run preprocess
-```
-
-## Data Sources
-
-- [Contracts Finder](https://www.contractsfinder.service.gov.uk/)
-- [OCDS Bulk Data (UK)](https://data.open-contracting.org/en/publication/143)
 
 ## License
 

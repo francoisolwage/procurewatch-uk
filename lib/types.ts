@@ -1,3 +1,17 @@
+export type GovernmentLevel =
+  | "central"
+  | "local"
+  | "scotland"
+  | "wales"
+  | "northern_ireland";
+
+export interface ContractLocation {
+  lat: number;
+  lng: number;
+  locality: string;
+  nation: string;
+}
+
 export interface RawContract {
   ocid: string;
   notice_id: string;
@@ -11,11 +25,21 @@ export interface RawContract {
   description: string;
   department_tag?: string;
   contracts_finder_url?: string;
+  government_level?: GovernmentLevel;
+  location_lat?: number;
+  location_lng?: number;
+  location_locality?: string;
+  data_source?: string;
+  is_sample?: boolean;
 }
 
 export interface Contract extends RawContract {
   department_tag: string;
   contracts_finder_url: string;
+  government_level: GovernmentLevel;
+  location: ContractLocation;
+  data_source: string;
+  is_sample: boolean;
   flag_duplicate_risk: boolean;
   flag_repeated_consultancy: boolean;
   flag_value_spike: boolean;
@@ -35,6 +59,7 @@ export type SortOption =
 export type PageSection =
   | "Overview"
   | "All Contracts"
+  | "Project Map"
   | "By Department"
   | "Legal Services / Lawfare"
   | "Red Flags Explorer"
@@ -43,6 +68,7 @@ export type PageSection =
 
 export interface Filters {
   departments: string[];
+  governmentLevels: GovernmentLevel[];
   yearMin: number;
   yearMax: number;
   valueMin: number;
@@ -51,6 +77,18 @@ export interface Filters {
   flaggedOnly: boolean;
   era: string;
   sortBy: SortOption;
+}
+
+export interface MapPoint {
+  id: string;
+  lat: number;
+  lng: number;
+  title: string;
+  buyer: string;
+  value_gbp: number;
+  government_level: GovernmentLevel;
+  risk_score: number;
+  highlighted: boolean;
 }
 
 export interface GovernmentEra {

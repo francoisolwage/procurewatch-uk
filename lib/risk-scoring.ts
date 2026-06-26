@@ -1,10 +1,10 @@
 import {
   CONSULTANCY_KEYWORDS,
   CONSULTANCY_SUPPLIERS,
-  DEPARTMENT_TAGS,
   LEGAL_KEYWORDS,
   RED_FLAG_DEFINITIONS,
 } from "./constants";
+import { deriveDataSource, deriveGovernmentLevel, deriveLocation } from "./government";
 import type { Contract, RawContract } from "./types";
 
 function normalizeText(text: string): string {
@@ -167,12 +167,25 @@ export function computeRiskScores(raw: RawContract[]): Contract[] {
     const redFlagCount =
       Number(dup[i]) + Number(consult[i]) + Number(spike[i]);
 
+    const level = row.government_level ?? deriveGovernmentLevel(row.buyer);
+    const location = deriveLocation(row.buyer, level, {
+      lat: row.location_lat,
+      lng: row.location_lng,
+      locality: row.location_locality,
+    });
+
     return {
       ...row,
-      department_tag: row.department_tag ?? DEPARTMENT_TAGS[row.buyer] ?? "Other",
+      government_level: level,
+      location,
+      data_source: row.data_source ?? deriveDataSource(level),
+      is_sample: row.is_sample ?? false,
+      department_tag: row.department_tag ?? "Other",
       contracts_finder_url:
         row.contracts_finder_url ??
-        `https://www.contractsfinder.service.gov.uk/Notice/${row.notice_id}`,
+        (level === "central" || level === "local"
+          ? `https://www.contractsfinder.service.gov.uk/Notice/${row.notice_id}`
+          : row.notice_id),
       flag_duplicate_risk: dup[i],
       flag_repeated_consultancy: consult[i],
       flag_value_spike: spike[i],

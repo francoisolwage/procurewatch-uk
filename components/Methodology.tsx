@@ -1,4 +1,10 @@
-import { DATA_SOURCES, GOVERNMENT_ERAS, RED_FLAG_DEFINITIONS } from "@/lib/constants";
+import {
+  DATA_SOURCES,
+  DATA_SOURCE_LABELS,
+  GOVERNMENT_ERAS,
+  RED_FLAG_DEFINITIONS,
+} from "@/lib/constants";
+import { GOVERNMENT_LEVEL_LABELS } from "@/lib/government";
 
 export function RiskMethodology() {
   return (
@@ -31,43 +37,76 @@ export function RiskMethodology() {
 
 export function DataSources() {
   return (
-    <details className="rounded-xl border border-gov-border bg-gov-surface p-4">
+    <details className="rounded-xl border border-gov-border bg-gov-surface p-4" open>
       <summary className="cursor-pointer font-semibold text-gov-navy">
-        Data sources &amp; loading real OCDS bulk data
+        Data sources, correctness &amp; multi-portal coverage
       </summary>
-      <div className="mt-3 space-y-3 text-sm text-slate-700">
+      <div className="mt-3 space-y-4 text-sm text-slate-700">
         <p>
-          <strong>Current dataset:</strong> Sample data for demonstration
-          (4,000+ realistic contracts, 2017–2026).
+          ProcureWatch UK covers procurement across{" "}
+          <strong>UK central government</strong>,{" "}
+          <strong>local authorities (England)</strong>, and{" "}
+          <strong>devolved administrations</strong> (Scotland, Wales, Northern Ireland).
+          Each record is attributed to its official portal where applicable.
         </p>
+
+        <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
+          <p className="font-medium text-blue-900">Sample vs real data</p>
+          <p className="mt-1 text-blue-800">
+            The bundled dataset is <strong>demonstration data only</strong> — clearly
+            labelled with <code>is_sample: true</code> and descriptions stating they
+            are not official notices. For authoritative scrutiny, upload exports from
+            the official portals below. Uploaded records are marked as user-supplied
+            and risk flags are recalculated on load.
+          </p>
+        </div>
+
+        <h4 className="font-semibold text-gov-navy">Official procurement portals</h4>
+        <ul className="space-y-2">
+          {Object.entries(DATA_SOURCE_LABELS).map(([url, label]) => (
+            <li key={url}>
+              <a
+                href={url}
+                className="text-gov-blue hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
+
+        <h4 className="font-semibold text-gov-navy">Government level classification</h4>
+        <ul className="list-disc space-y-1 pl-5">
+          {Object.entries(GOVERNMENT_LEVEL_LABELS).map(([key, label]) => (
+            <li key={key}>
+              <strong>{label}</strong> — derived from buyer name and mapped to the
+              appropriate portal above.
+            </li>
+          ))}
+        </ul>
+
+        <h4 className="font-semibold text-gov-navy">Map locations</h4>
+        <p>
+          Map markers use <strong>buyer administrative headquarters or council seat</strong>{" "}
+          coordinates. Procurement notices rarely include precise project-site
+          geography; we do not claim site-level accuracy unless your uploaded data
+          includes explicit coordinates.
+        </p>
+
+        <h4 className="font-semibold text-gov-navy">How to load real data</h4>
         <ol className="list-decimal space-y-2 pl-5">
           <li>
-            Download bulk OCDS releases from{" "}
-            <a
-              href={DATA_SOURCES.ocds_bulk}
-              className="text-gov-blue hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open Contracting Data Standard — UK Contracts Finder
-            </a>
+            Export CSV or JSON/JSONL from any portal above (or OCDS bulk from{" "}
+            <a href={DATA_SOURCES.ocds_bulk} className="text-gov-blue hover:underline" target="_blank" rel="noopener noreferrer">
+              data.open-contracting.org
+            </a>)
           </li>
+          <li>Use sidebar <strong>Upload real data</strong></li>
           <li>
-            Or export from{" "}
-            <a
-              href={DATA_SOURCES.contracts_finder}
-              className="text-gov-blue hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Contracts Finder
-            </a>{" "}
-            search results (CSV/JSON)
-          </li>
-          <li>Use the sidebar <strong>Upload real data</strong> to load your file</li>
-          <li>
-            Required fields: OCID, Notice ID, Title, Buyer, Supplier, Award Date,
-            Value, CPV, Description
+            Required: Title, Buyer, Supplier, Award Date, Value. Optional: government_level,
+            location_lat, location_lng, location_locality for map placement.
           </li>
         </ol>
       </div>

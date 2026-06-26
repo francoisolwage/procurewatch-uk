@@ -12,21 +12,34 @@ import SpendLineChart from "./SpendLineChart";
 import ContractsTable from "./ContractsTable";
 import ContractDetail from "./ContractDetail";
 import NotableProjects from "./NotableProjects";
+import ProcurementMap from "./ProcurementMap";
+import TierCoverage from "./TierCoverage";
+import SampleDataBanner from "./SampleDataBanner";
 import { RiskMethodology, DataSources, EraKey } from "./Methodology";
 import { GOVERNMENT_ERAS, RED_FLAG_DEFINITIONS } from "@/lib/constants";
+import { GOVERNMENT_LEVEL_LABELS } from "@/lib/government";
 import { applyFilters, contractsToCSV } from "@/lib/filters";
 import { loadSampleContracts, parseCSV, parseJSON } from "@/lib/data-loader";
 import { formatGBP } from "@/lib/format";
-import type { Contract, Filters, PageSection } from "@/lib/types";
+import type { Contract, Filters, GovernmentLevel, PageSection } from "@/lib/types";
 
 const SECTIONS: PageSection[] = [
   "Overview",
+  "Project Map",
   "All Contracts",
   "By Department",
   "Legal Services / Lawfare",
   "Red Flags Explorer",
   "Notable Projects",
   "Methodology & Data",
+];
+
+const GOVERNMENT_LEVELS: GovernmentLevel[] = [
+  "central",
+  "local",
+  "scotland",
+  "wales",
+  "northern_ireland",
 ];
 
 const SORT_OPTIONS = [
@@ -63,6 +76,7 @@ export default function Dashboard() {
 
   const [filters, setFilters] = useState<Filters>({
     departments: [],
+    governmentLevels: [],
     yearMin: 2017,
     yearMax: 2026,
     valueMin: 0,
@@ -128,6 +142,7 @@ export default function Dashboard() {
       const values = parsed.map((c) => c.value_gbp);
       setFilters({
         departments: [],
+        governmentLevels: [],
         yearMin: Math.min(...years),
         yearMax: Math.max(...years),
         valueMin: Math.min(...values),
@@ -156,6 +171,7 @@ export default function Dashboard() {
       setFilters((f) => ({
         ...f,
         departments: [],
+        governmentLevels: [],
         yearMin: Math.min(...years),
         yearMax: Math.max(...years),
         valueMin: Math.min(...values),
@@ -269,6 +285,27 @@ export default function Dashboard() {
 
             <div className="space-y-3 text-sm">
               <div>
+                <label className="mb-1 block text-xs text-gov-slate">Government level</label>
+                <select
+                  multiple
+                  className="h-28 w-full rounded-lg border border-gov-border px-2 py-1"
+                  value={filters.governmentLevels}
+                  onChange={(e) =>
+                    updateFilter(
+                      "governmentLevels",
+                      Array.from(e.target.selectedOptions, (o) => o.value as GovernmentLevel)
+                    )
+                  }
+                >
+                  {GOVERNMENT_LEVELS.map((level) => (
+                    <option key={level} value={level}>
+                      {GOVERNMENT_LEVEL_LABELS[level]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="mb-1 block text-xs text-gov-slate">Department</label>
                 <select
                   multiple
@@ -379,6 +416,7 @@ export default function Dashboard() {
         {/* Main */}
         <main className="min-w-0 flex-1 space-y-6">
           <Header />
+          {dataMode === "sample" && <SampleDataBanner />}
 
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -402,7 +440,13 @@ export default function Dashboard() {
           {section === "Overview" && (
             <>
               <h2 className="section-title">Overview</h2>
+              <TierCoverage contracts={filtered} />
               <Metrics contracts={filtered} />
+              <ProcurementMap
+                contracts={filtered}
+                selectedId={selected?.ocid}
+                onSelect={setSelected}
+              />
               <SpendByYearChart contracts={filtered} />
               <EraLegend />
               <h3 className="text-lg font-semibold text-gov-navy">All Contracts</h3>
@@ -415,6 +459,31 @@ export default function Dashboard() {
                 Download filtered data (CSV)
               </button>
               <RiskMethodology />
+            </>
+          )}
+
+          {section === "Project Map" && (
+            <>
+              <h2 className="section-title">Project Map</h2>
+              <p className="text-sm text-slate-600">
+                Interactive map of procurement by buyer location across central,
+                local and devolved UK governments. Filters in the sidebar update
+                markers in real time. Click a marker or table row for details.
+              </p>
+              <TierCoverage contracts={filtered} />
+              <ProcurementMap
+                contracts={filtered}
+                selectedId={selected?.ocid}
+                onSelect={setSelected}
+              />
+              <ContractsTable
+                key={`map-${tableKey}`}
+                contracts={filtered}
+                onSelect={(c) => {
+                  setSelected(c);
+                  setSection("Project Map");
+                }}
+              />
             </>
           )}
 

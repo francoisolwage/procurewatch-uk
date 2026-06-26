@@ -1,5 +1,7 @@
 "use client";
 
+import { DATA_SOURCE_LABELS } from "@/lib/constants";
+import { GOVERNMENT_LEVEL_LABELS } from "@/lib/government";
 import { explainFlags } from "@/lib/risk-scoring";
 import { formatDate, formatGBP, riskColor } from "@/lib/format";
 import type { Contract } from "@/lib/types";
@@ -48,6 +50,27 @@ export default function ContractDetail({ contract, onClose }: Props) {
             </dd>
           </div>
           <div>
+            <dt className="font-medium text-gov-slate">Government level</dt>
+            <dd>{GOVERNMENT_LEVEL_LABELS[contract.government_level]}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-gov-slate">Location (buyer HQ)</dt>
+            <dd>
+              {contract.location.locality}, {contract.location.nation} (
+              {contract.location.lat.toFixed(3)}, {contract.location.lng.toFixed(3)})
+            </dd>
+          </div>
+          <div>
+            <dt className="font-medium text-gov-slate">Data source</dt>
+            <dd>
+              {contract.is_sample ? (
+                <span className="text-amber-700">Demonstration sample — not an official notice</span>
+              ) : (
+                DATA_SOURCE_LABELS[contract.data_source] ?? contract.data_source
+              )}
+            </dd>
+          </div>
+          <div>
             <dt className="font-medium text-gov-slate">Supplier</dt>
             <dd>{contract.supplier}</dd>
           </div>
@@ -82,14 +105,26 @@ export default function ContractDetail({ contract, onClose }: Props) {
           </div>
         )}
 
-        <a
-          href={contract.contracts_finder_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn-primary mt-4"
-        >
-          View on Contracts Finder →
-        </a>
+        {contract.contracts_finder_url?.startsWith("http") && (
+          <a
+            href={contract.contracts_finder_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary mt-4"
+          >
+            View source notice →
+          </a>
+        )}
+        {!contract.contracts_finder_url?.startsWith("http") && contract.data_source && (
+          <a
+            href={contract.data_source}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary mt-4"
+          >
+            View official portal →
+          </a>
+        )}
       </div>
     </div>
   );

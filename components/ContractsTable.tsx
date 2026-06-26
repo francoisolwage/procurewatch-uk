@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { GOVERNMENT_LEVEL_LABELS } from "@/lib/government";
 import { formatDate, formatGBP, riskColor } from "@/lib/format";
 import type { Contract } from "@/lib/types";
 
@@ -44,6 +45,7 @@ export default function ContractsTable({
               <th className="px-4 py-3 text-right">Value (£)</th>
               <th className="px-4 py-3 text-center">Risk</th>
               <th className="px-4 py-3 text-center">Flags</th>
+              <th className="px-4 py-3">Level</th>
               <th className="px-4 py-3">Tag</th>
             </tr>
           </thead>
@@ -74,6 +76,9 @@ export default function ContractsTable({
                   ) : (
                     <span className="text-slate-400">—</span>
                   )}
+                </td>
+                <td className="px-4 py-3 text-xs text-slate-600">
+                  {GOVERNMENT_LEVEL_LABELS[c.government_level].split("—")[0].trim()}
                 </td>
                 <td className="px-4 py-3 text-xs text-slate-500">
                   {c.department_tag}
