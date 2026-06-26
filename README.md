@@ -32,10 +32,12 @@ Open [http://localhost:8501](http://localhost:8501)
 
 ### Streamlit Community Cloud (recommended for the dashboard)
 
-1. Push this repo to GitHub
-2. Go to [share.streamlit.io](https://share.streamlit.io)
-3. Connect your GitHub account → New app → select this repo
-4. Main file: `app.py` → Deploy
+**One-click deploy:** [Deploy to Streamlit Cloud](https://share.streamlit.io/deploy?repository=francoisolwage/procurewatch-uk&branch=main&mainModule=app.py)
+
+Or manually:
+1. Go to [share.streamlit.io](https://share.streamlit.io)
+2. Connect GitHub → New app → `francoisolwage/procurewatch-uk`
+3. Main file: `app.py` → Deploy
 
 ### Vercel (landing page)
 
