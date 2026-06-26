@@ -1,9 +1,23 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Vercel
+.vercel
+
+# Python (data generation)
 __pycache__/
 *.py[cod]
-.env
 .venv/
 venv/
-.streamlit/secrets.toml
+
+# Env
+.env
+.env*.local
+
+# OS
 .DS_Store
-.vercel
-.vercel
+Thumbs.db

@@ -2,20 +2,23 @@
 
 UK Public Procurement Accountability Dashboard — transparent scrutiny of government spending using Contracts Finder / OCDS data.
 
+Built with **Next.js**, **TypeScript**, **Tailwind CSS**, and **Recharts**. Deploys natively to Vercel.
+
 ## Quick Start
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Generate sample data (first time only)
-python data/generate_sample_data.py
-
-# Run locally
-streamlit run app.py
+npm install
+npm run dev
 ```
 
-Open [http://localhost:8501](http://localhost:8501)
+Open [http://localhost:3000](http://localhost:3000)
+
+## Build
+
+```bash
+npm run build    # preprocesses sample data + builds Next.js
+npm start        # production server
+```
 
 ## Features
 
@@ -28,26 +31,24 @@ Open [http://localhost:8501](http://localhost:8501)
 - **CSV export** — Download any filtered view
 - **Real data upload** — Switch from sample to OCDS bulk CSV/JSONL
 
-## Deploy
+## Deploy to Vercel
 
-### Streamlit Community Cloud (recommended for the dashboard)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/francoisolwage/procurewatch-uk)
 
-**One-click deploy:** [Deploy to Streamlit Cloud](https://share.streamlit.io/deploy?repository=francoisolwage/procurewatch-uk&branch=main&mainModule=app.py)
-
-Or manually:
-1. Go to [share.streamlit.io](https://share.streamlit.io)
-2. Connect GitHub → New app → `francoisolwage/procurewatch-uk`
-3. Main file: `app.py` → Deploy
-
-### Vercel (landing page)
-
-The `public/` folder contains a static landing page. Deploy with:
+Or via CLI:
 
 ```bash
 npx vercel --prod
 ```
 
-The live Streamlit dashboard runs on Streamlit Cloud; Vercel hosts the project landing/redirect page.
+**Live:** [procurewatch-uk.vercel.app](https://procurewatch-uk.vercel.app)
+
+## Regenerate Sample Data
+
+```bash
+python data/generate_sample_data.py
+npm run preprocess
+```
 
 ## Data Sources
 

@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+@layer components {
+  .metric-card {
+    @apply rounded-xl border border-gov-border bg-gov-surface p-4;
+  }
+
+  .section-title {
+    @apply text-xl font-semibold text-gov-navy;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-lg bg-gov-blue px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-800;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 rounded-lg border border-gov-border bg-white px-4 py-2 text-sm font-medium text-gov-navy transition hover:bg-gov-surface;
+  }
+
+  .flag-badge {
+    @apply inline-block rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700;
+  }
+
+  .nav-item {
+    @apply w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition;
+  }
+
+  .nav-item-active {
+    @apply bg-blue-50 text-gov-blue;
+  }
+
+  .nav-item-inactive {
+    @apply text-slate-600 hover:bg-slate-100;
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "procurewatch-uk",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx scripts/preprocess.ts && next dev",
+    "build": "tsx scripts/preprocess.ts && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "preprocess": "tsx scripts/preprocess.ts"
+  },
+  "dependencies": {
+    "next": "^15.1.0",
+    "papaparse": "^5.5.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^2.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/papaparse": "^5.3.15",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
