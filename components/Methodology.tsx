@@ -51,13 +51,29 @@ export function DataSources() {
         </p>
 
         <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
-          <p className="font-medium text-blue-900">Sample vs real data</p>
-          <p className="mt-1 text-blue-800">
-            The bundled dataset is <strong>demonstration data only</strong> — clearly
-            labelled with <code>is_sample: true</code> and descriptions stating they
-            are not official notices. For authoritative scrutiny, upload exports from
-            the official portals below. Uploaded records are marked as user-supplied
-            and risk flags are recalculated on load.
+          <p className="font-medium text-blue-900">Three data tiers</p>
+          <ul className="mt-2 list-disc space-y-2 pl-5 text-blue-800">
+            <li>
+              <strong>Verified (live-fetched)</strong> — records pulled at build time
+              from official OCDS/API endpoints (Contracts Finder, Public Contracts
+              Scotland where available). Marked <code>is_sample: false</code> with real
+              notice URLs in <code>contracts_finder_url</code>.
+            </li>
+            <li>
+              <strong>Demonstration</strong> — synthetic records for volume
+              exploration, marked <code>is_sample: true</code> with{" "}
+              <code>DEMO-</code> notice IDs and descriptions stating they are not
+              official notices.
+            </li>
+            <li>
+              <strong>User upload</strong> — your CSV/JSON exports from any portal
+              below; risk flags recalculated on load.
+            </li>
+          </ul>
+          <p className="mt-2 text-blue-800">
+            The banner at the top shows verified vs demonstration counts. Never treat
+            demonstration records as authoritative — use verified or uploaded data for
+            scrutiny.
           </p>
         </div>
 

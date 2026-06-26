@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "tsx scripts/preprocess.ts && next dev",
-    "build": "tsx scripts/generate-sample.ts && tsx scripts/preprocess.ts && next build",
+    "build": "tsx scripts/generate-sample.ts && tsx scripts/fetch-verified.ts && tsx scripts/preprocess.ts && next build",
+    "fetch-verified": "tsx scripts/fetch-verified.ts",
     "start": "next start",
     "lint": "next lint",
     "preprocess": "tsx scripts/preprocess.ts",
@@ -30,6 +31,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.20",
+    "playwright": "^1.61.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.2",

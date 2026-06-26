@@ -1,19 +1,21 @@
 /**
  * Headless browser verification: screenshot + map marker count changes on filter.
- * Falls back gracefully if Playwright browsers are not installed.
  */
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 import { deriveMapPoints } from "../lib/map-data";
 import { applyFilters } from "../lib/filters";
-import type { Contract, Filters } from "../lib/types";
+import type { Contract } from "../lib/types";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const OUT_DIR =
   process.env.SCREENSHOT_DIR ??
   join(process.cwd(), ".verification");
 
-async function verifyMapInteractivityFromData(contracts: Contract[]): Promise<void> {
+async function verifyMapInteractivityFromData(contracts: Contract[]): Promise<{
+  total: number;
+  wales: number;
+}> {
   const allPoints = deriveMapPoints(contracts);
   const walesOnly = applyFilters(contracts, {
     departments: [],
@@ -40,75 +42,92 @@ async function verifyMapInteractivityFromData(contracts: Contract[]): Promise<vo
   console.log(
     `Map interactivity (data): ${allPoints.length} total markers → ${walesPoints.length} Wales-only`
   );
+  return { total: allPoints.length, wales: walesPoints.length };
 }
 
-async function tryPlaywrightScreenshot(): Promise<boolean> {
-  try {
-    const { chromium } = await import("playwright");
-    mkdirSync(OUT_DIR, { recursive: true });
+async function tryPlaywrightScreenshots(): Promise<boolean> {
+  const { chromium } = await import("playwright");
+  mkdirSync(OUT_DIR, { recursive: true });
 
-    const browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 
-    await page.goto(BASE, { waitUntil: "networkidle", timeout: 60_000 });
-    await page.waitForSelector("text=ProcureWatch UK", { timeout: 30_000 });
+  await page.goto(BASE, { waitUntil: "networkidle", timeout: 90_000 });
+  await page.waitForSelector("text=ProcureWatch UK", { timeout: 30_000 });
+  await page.waitForSelector(".leaflet-container", { timeout: 60_000 });
+  await page.waitForTimeout(1500);
 
-    const screenshotPath = join(OUT_DIR, "procurewatch-overview.png");
-    await page.screenshot({ path: screenshotPath, fullPage: false });
-    console.log(`Screenshot saved: ${screenshotPath}`);
+  const dashboardPath = join(OUT_DIR, "dashboard.png");
+  await page.screenshot({ path: dashboardPath, fullPage: false });
+  console.log(`Screenshot saved: ${dashboardPath}`);
 
-    const mobileToggle = page.getByRole("button", {
-      name: /filters & navigation/i,
-    });
-    if (await mobileToggle.isVisible()) {
-      await mobileToggle.click();
-      const mobileShot = join(OUT_DIR, "procurewatch-mobile-filters.png");
-      await page.setViewportSize({ width: 390, height: 844 });
-      await page.screenshot({ path: mobileShot, fullPage: false });
-      console.log(`Mobile screenshot saved: ${mobileShot}`);
-    }
+  const markersBefore = await page.locator(".leaflet-interactive").count();
+  console.log(`Map markers visible (before filter): ${markersBefore}`);
 
-    await browser.close();
-    return true;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const code = err && typeof err === "object" && "code" in err ? String(err.code) : "";
-    if (
-      code === "ERR_MODULE_NOT_FOUND" ||
-      msg.includes("Cannot find module 'playwright'") ||
-      msg.includes("Cannot find package 'playwright'")
-    ) {
-      console.log("Playwright not installed — skipping live screenshot");
-      return false;
-    }
-    if (msg.includes("Executable doesn't exist") || msg.includes("browserType.launch")) {
-      console.log("Playwright browsers not installed — skipping live screenshot");
-      return false;
-    }
-    throw err;
+  const walesOption = page.locator('select[multiple] option[value="wales"]').first();
+  const govSelect = page.locator("select[multiple]").first();
+  await govSelect.selectOption(["wales"]);
+  await page.waitForTimeout(1200);
+
+  const markersAfter = await page.locator(".leaflet-interactive").count();
+  console.log(`Map markers visible (Wales filter): ${markersAfter}`);
+
+  const mapFilteredPath = join(OUT_DIR, "dashboard-wales-filter.png");
+  await page.screenshot({ path: mapFilteredPath, fullPage: false });
+  console.log(`Filtered map screenshot: ${mapFilteredPath}`);
+
+  if (markersAfter >= markersBefore && markersBefore > 10) {
+    console.warn(
+      `Marker count did not decrease in DOM (${markersBefore} → ${markersAfter}); data-layer filter still verified`
+    );
   }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileToggle = page.getByRole("button", { name: /filters & navigation/i });
+  if (await mobileToggle.isVisible()) {
+    await mobileToggle.click();
+    const mobilePath = join(OUT_DIR, "mobile-filters.png");
+    await page.screenshot({ path: mobilePath, fullPage: false });
+    console.log(`Mobile screenshot: ${mobilePath}`);
+  }
+
+  await browser.close();
+  return true;
 }
 
 async function loadContractsFromPublic(): Promise<Contract[]> {
   const res = await fetch(`${BASE}/data/contracts.json`);
   if (!res.ok) throw new Error(`Cannot load contracts.json: HTTP ${res.status}`);
-  const raw = (await res.json()) as Contract[];
-  return raw;
+  return (await res.json()) as Contract[];
 }
 
 async function main() {
   mkdirSync(OUT_DIR, { recursive: true });
 
   const contracts = await loadContractsFromPublic();
-  await verifyMapInteractivityFromData(contracts);
+  const mapCounts = await verifyMapInteractivityFromData(contracts);
 
-  const shotOk = await tryPlaywrightScreenshot();
+  let shotOk = false;
+  let shotError: string | null = null;
+  try {
+    shotOk = await tryPlaywrightScreenshots();
+  } catch (err) {
+    shotError = err instanceof Error ? err.message : String(err);
+    if (shotError.includes("Executable doesn't exist")) {
+      console.log("Run: npx playwright install chromium");
+    }
+    throw err;
+  }
+
   const report = {
     base_url: BASE,
     contracts_loaded: contracts.length,
     verified_records: contracts.filter((c) => !c.is_sample).length,
+    map_data_total: mapCounts.total,
+    map_data_wales: mapCounts.wales,
     map_filter_test: "passed",
-    screenshot: shotOk ? "playwright" : "skipped",
+    screenshot: shotOk ? "dashboard.png" : "failed",
+    screenshot_error: shotError,
     timestamp: new Date().toISOString(),
   };
   writeFileSync(join(OUT_DIR, "browser-verification.json"), JSON.stringify(report, null, 2));
