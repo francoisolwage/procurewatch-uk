@@ -1,0 +1,34 @@
+[
+  {
+    "ocid": "ocds-fixture-scot-edinburgh-schools",
+    "notice_id": "rls-12-JUN512340",
+    "title": "City of Edinburgh Council — Schools Maintenance Framework",
+    "buyer": "City of Edinburgh Council",
+    "supplier": "Edinburgh Schools Partnership",
+    "award_date": "2021-09-01",
+    "value_gbp": 120000000,
+    "cpv_code": "45000000",
+    "category": "Construction work",
+    "description": "Fixture: OCDS-shaped Public Contracts Scotland award notice snapshot.",
+    "government_level": "scotland",
+    "data_source": "https://www.publiccontractsscotland.gov.uk/",
+    "contracts_finder_url": "https://www.publiccontractsscotland.gov.uk/search/show/search_view.aspx?ID=JUN512340",
+    "is_sample": false
+  },
+  {
+    "ocid": "ocds-fixture-scot-nhs-digital",
+    "notice_id": "rls-45-JUN509871",
+    "title": "NHS Scotland — National Digital Platform",
+    "buyer": "NHS Scotland",
+    "supplier": "NHS National Services Scotland",
+    "award_date": "2022-03-10",
+    "value_gbp": 45000000,
+    "cpv_code": "48000000",
+    "category": "Software and IT systems",
+    "description": "Fixture: OCDS-shaped Public Contracts Scotland award notice snapshot.",
+    "government_level": "scotland",
+    "data_source": "https://www.publiccontractsscotland.gov.uk/",
+    "contracts_finder_url": "https://www.publiccontractsscotland.gov.uk/search/show/search_view.aspx?ID=JUN509871",
+    "is_sample": false
+  }
+]

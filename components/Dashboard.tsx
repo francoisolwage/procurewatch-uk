@@ -23,6 +23,22 @@ import { loadSampleContracts, parseCSV, parseJSON } from "@/lib/data-loader";
 import { formatGBP } from "@/lib/format";
 import type { Contract, Filters, PageSection } from "@/lib/types";
 
+export type DataViewMode = "official" | "demonstration" | "upload";
+
+function boundsFromContracts(contracts: Contract[]) {
+  if (!contracts.length) {
+    return { yearMin: 2017, yearMax: 2026, valueMin: 0, valueMax: 1_000_000 };
+  }
+  const years = contracts.map((c) => new Date(c.award_date).getFullYear());
+  const values = contracts.map((c) => c.value_gbp);
+  return {
+    yearMin: Math.min(...years),
+    yearMax: Math.max(...years),
+    valueMin: Math.min(...values),
+    valueMax: Math.max(...values),
+  };
+}
+
 const SECTIONS: PageSection[] = [
   "Overview",
   "Project Map",
@@ -40,25 +56,22 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [section, setSection] = useState<PageSection>("Overview");
   const [selected, setSelected] = useState<Contract | null>(null);
-  const [dataMode, setDataMode] = useState<"sample" | "upload">("sample");
+  const [dataMode, setDataMode] = useState<DataViewMode>("official");
   const [uploading, setUploading] = useState(false);
   const [deptChoice, setDeptChoice] = useState("All departments");
   const [tableKey, setTableKey] = useState(0);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
 
-  const bounds = useMemo(() => {
-    if (!allContracts.length) {
-      return { yearMin: 2017, yearMax: 2026, valueMin: 0, valueMax: 1_000_000 };
-    }
-    const years = allContracts.map((c) => new Date(c.award_date).getFullYear());
-    const values = allContracts.map((c) => c.value_gbp);
-    return {
-      yearMin: Math.min(...years),
-      yearMax: Math.max(...years),
-      valueMin: Math.min(...values),
-      valueMax: Math.max(...values),
-    };
-  }, [allContracts]);
+  const scopeContracts = useMemo(() => {
+    if (dataMode === "upload") return allContracts;
+    if (dataMode === "demonstration") return allContracts.filter((c) => c.is_sample);
+    return allContracts.filter((c) => !c.is_sample);
+  }, [allContracts, dataMode]);
+
+  const bounds = useMemo(
+    () => boundsFromContracts(scopeContracts.length ? scopeContracts : allContracts),
+    [scopeContracts, allContracts]
+  );
 
   const [filters, setFilters] = useState<Filters>({
     departments: [],
@@ -77,14 +90,15 @@ export default function Dashboard() {
     loadSampleContracts()
       .then((data) => {
         setAllContracts(data);
-        const years = data.map((c) => new Date(c.award_date).getFullYear());
-        const values = data.map((c) => c.value_gbp);
+        setDataMode("official");
+        const official = data.filter((c) => !c.is_sample);
+        const b = boundsFromContracts(official.length ? official : data);
         setFilters((f) => ({
           ...f,
-          yearMin: Math.min(...years),
-          yearMax: Math.max(...years),
-          valueMin: Math.min(...values),
-          valueMax: Math.max(...values),
+          yearMin: b.yearMin,
+          yearMax: b.yearMax,
+          valueMin: b.valueMin,
+          valueMax: b.valueMax,
         }));
       })
       .catch((e) => setError(e.message))
@@ -92,8 +106,8 @@ export default function Dashboard() {
   }, []);
 
   const departments = useMemo(
-    () => [...new Set(allContracts.map((c) => c.buyer))].sort(),
-    [allContracts]
+    () => [...new Set(scopeContracts.map((c) => c.buyer))].sort(),
+    [scopeContracts]
   );
 
   const verifiedCount = useMemo(
@@ -107,8 +121,8 @@ export default function Dashboard() {
   );
 
   const filtered = useMemo(
-    () => applyFilters(allContracts, filters),
-    [allContracts, filters]
+    () => applyFilters(scopeContracts, filters),
+    [scopeContracts, filters]
   );
 
   const rangeWarning = useMemo(() => getRangeWarning(filters), [filters]);
@@ -136,21 +150,7 @@ export default function Dashboard() {
       if (!parsed) throw new Error("Unsupported format. Use CSV or JSON/JSONL.");
       setAllContracts(parsed);
       setDataMode("upload");
-      const years = parsed.map((c) => new Date(c.award_date).getFullYear());
-      const values = parsed.map((c) => c.value_gbp);
-      setFilters({
-        departments: [],
-        governmentLevels: [],
-        yearMin: Math.min(...years),
-        yearMax: Math.max(...years),
-        valueMin: Math.min(...values),
-        valueMax: Math.max(...values),
-        search: "",
-        flaggedOnly: false,
-        era: "All",
-        sortBy: "Highest value",
-      });
-      setTableKey((k) => k + 1);
+      applyModeBounds("upload", parsed);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
     } finally {
@@ -158,32 +158,32 @@ export default function Dashboard() {
     }
   };
 
-  const resetToSample = async () => {
-    setLoading(true);
-    try {
-      const data = await loadSampleContracts();
-      setAllContracts(data);
-      setDataMode("sample");
-      const years = data.map((c) => new Date(c.award_date).getFullYear());
-      const values = data.map((c) => c.value_gbp);
-      setFilters((f) => ({
-        ...f,
-        departments: [],
-        governmentLevels: [],
-        yearMin: Math.min(...years),
-        yearMax: Math.max(...years),
-        valueMin: Math.min(...values),
-        valueMax: Math.max(...values),
-        search: "",
-        flaggedOnly: false,
-        era: "All",
-      }));
-      setTableKey((k) => k + 1);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load sample");
-    } finally {
-      setLoading(false);
-    }
+  const applyModeBounds = (mode: DataViewMode, data: Contract[]) => {
+    const subset =
+      mode === "demonstration"
+        ? data.filter((c) => c.is_sample)
+        : mode === "official"
+          ? data.filter((c) => !c.is_sample)
+          : data;
+    const b = boundsFromContracts(subset.length ? subset : data);
+    setFilters((f) => ({
+      ...f,
+      departments: [],
+      governmentLevels: [],
+      yearMin: b.yearMin,
+      yearMax: b.yearMax,
+      valueMin: b.valueMin,
+      valueMax: b.valueMax,
+      search: "",
+      flaggedOnly: false,
+      era: "All",
+    }));
+    setTableKey((k) => k + 1);
+  };
+
+  const switchDataMode = (mode: DataViewMode) => {
+    setDataMode(mode);
+    if (allContracts.length) applyModeBounds(mode, allContracts);
   };
 
   const downloadCSV = () => {
@@ -218,15 +218,16 @@ export default function Dashboard() {
       setMobilePanelOpen(false);
     },
     dataMode,
-    onSampleMode: resetToSample,
-    onUploadMode: () => setDataMode("upload"),
+    onOfficialMode: () => switchDataMode("official"),
+    onDemonstrationMode: () => switchDataMode("demonstration"),
+    onUploadMode: () => switchDataMode("upload"),
     onUpload: handleUpload,
     uploading,
     filters,
     bounds,
     departments,
     filteredCount: filtered.length,
-    totalCount: allContracts.length,
+    totalCount: scopeContracts.length,
     rangeWarning,
     onFilterChange: updateFilter,
   };
@@ -252,9 +253,12 @@ export default function Dashboard() {
         {/* Main */}
         <main className="min-w-0 flex-1 space-y-6">
           <Header />
-          {dataMode === "sample" && (
-            <SampleDataBanner verifiedCount={verifiedCount} demoCount={demoCount} />
-          )}
+          <SampleDataBanner
+            dataMode={dataMode}
+            verifiedCount={verifiedCount}
+            demoCount={demoCount}
+            scopeCount={scopeContracts.length}
+          />
 
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -272,7 +276,7 @@ export default function Dashboard() {
             >
               <span>{mobilePanelOpen ? "Hide" : "Show"} filters &amp; navigation</span>
               <span className="text-gov-slate">
-                {filtered.length.toLocaleString()} / {allContracts.length.toLocaleString()}
+                {filtered.length.toLocaleString()} / {scopeContracts.length.toLocaleString()}
               </span>
             </button>
             {mobilePanelOpen && (

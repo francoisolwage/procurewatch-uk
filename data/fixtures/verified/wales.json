@@ -1,0 +1,34 @@
+[
+  {
+    "ocid": "ocds-fixture-wales-cardiff-waste",
+    "notice_id": "JUN524891",
+    "title": "Cardiff Council — Waste Collection and Recycling Services",
+    "buyer": "Cardiff Council",
+    "supplier": "Suez Recycling and Recovery UK Ltd",
+    "award_date": "2022-07-01",
+    "value_gbp": 65000000,
+    "cpv_code": "90500000",
+    "category": "Refuse and waste related services",
+    "description": "Fixture: OCDS-shaped Sell2Wales award notice snapshot (checked in for Wales tier coverage).",
+    "government_level": "wales",
+    "data_source": "https://www.sell2wales.gov.wales/",
+    "contracts_finder_url": "https://www.sell2wales.gov.wales/search/show/search_view.aspx?ID=JUN524891",
+    "is_sample": false
+  },
+  {
+    "ocid": "ocds-fixture-wales-nhs-shared",
+    "notice_id": "JUN518203",
+    "title": "NHS Wales — Shared Business Services Framework",
+    "buyer": "NHS Wales",
+    "supplier": "NHS Wales Shared Services Partnership",
+    "award_date": "2021-01-15",
+    "value_gbp": 95000000,
+    "cpv_code": "75000000",
+    "category": "Public administration services",
+    "description": "Fixture: OCDS-shaped Sell2Wales award notice snapshot (checked in for Wales tier coverage).",
+    "government_level": "wales",
+    "data_source": "https://www.sell2wales.gov.wales/",
+    "contracts_finder_url": "https://www.sell2wales.gov.wales/search/show/search_view.aspx?ID=JUN518203",
+    "is_sample": false
+  }
+]

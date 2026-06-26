@@ -62,6 +62,9 @@ export default function ProcurementMapInner({
       data-testid="procurement-map"
       style={{ height: 480, width: "100%" }}
     >
+      <span data-testid="map-marker-count" className="sr-only" aria-hidden>
+        {points.length}
+      </span>
       <MapContainer
         bounds={UK_BOUNDS}
         scrollWheelZoom

@@ -3,6 +3,7 @@
 import { GOVERNMENT_ERAS } from "@/lib/constants";
 import { GOVERNMENT_LEVEL_LABELS } from "@/lib/government";
 import type { Filters, GovernmentLevel, PageSection } from "@/lib/types";
+import type { DataViewMode } from "./Dashboard";
 
 const GOVERNMENT_LEVELS: GovernmentLevel[] = [
   "central",
@@ -23,8 +24,9 @@ interface Props {
   section: PageSection;
   sections: PageSection[];
   onSectionChange: (s: PageSection) => void;
-  dataMode: "sample" | "upload";
-  onSampleMode: () => void;
+  dataMode: DataViewMode;
+  onOfficialMode: () => void;
+  onDemonstrationMode: () => void;
   onUploadMode: () => void;
   onUpload: (file: File) => void;
   uploading: boolean;
@@ -42,7 +44,8 @@ export default function FilterPanel({
   sections,
   onSectionChange,
   dataMode,
-  onSampleMode,
+  onOfficialMode,
+  onDemonstrationMode,
   onUploadMode,
   onUpload,
   uploading,
@@ -76,13 +79,32 @@ export default function FilterPanel({
       <h2 className="text-sm font-semibold uppercase tracking-wide text-gov-slate">
         Data Source
       </h2>
-      <div className="space-y-2 text-sm">
+      <div className="space-y-2 text-sm" data-testid="data-source-panel">
         <label className="flex items-center gap-2">
-          <input type="radio" checked={dataMode === "sample"} onChange={onSampleMode} />
-          Sample + verified records
+          <input
+            type="radio"
+            name="data-view-mode"
+            checked={dataMode === "official"}
+            onChange={onOfficialMode}
+          />
+          Official records (verified)
         </label>
         <label className="flex items-center gap-2">
-          <input type="radio" checked={dataMode === "upload"} onChange={onUploadMode} />
+          <input
+            type="radio"
+            name="data-view-mode"
+            checked={dataMode === "demonstration"}
+            onChange={onDemonstrationMode}
+          />
+          Demonstration data
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name="data-view-mode"
+            checked={dataMode === "upload"}
+            onChange={onUploadMode}
+          />
           Upload real data
         </label>
         {dataMode === "upload" && (
@@ -116,6 +138,7 @@ export default function FilterPanel({
           <label className="mb-1 block text-xs text-gov-slate">Government level</label>
           <select
             multiple
+            data-testid="government-level-filter"
             className="h-28 w-full rounded-lg border border-gov-border px-2 py-1"
             value={filters.governmentLevels}
             onChange={(e) =>

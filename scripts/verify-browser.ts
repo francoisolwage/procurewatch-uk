@@ -1,5 +1,5 @@
 /**
- * Headless browser verification: screenshot + map marker count changes on filter.
+ * Headless browser verification: screenshot + map-marker-count filter assertion.
  */
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
@@ -31,9 +31,7 @@ async function verifyMapInteractivityFromData(contracts: Contract[]): Promise<{
   });
   const walesPoints = deriveMapPoints(walesOnly);
 
-  if (allPoints.length === 0) {
-    throw new Error("No map points in dataset");
-  }
+  if (allPoints.length === 0) throw new Error("No map points in dataset");
   if (walesPoints.length >= allPoints.length) {
     throw new Error(
       `Wales filter did not reduce markers (${walesPoints.length} >= ${allPoints.length})`
@@ -45,7 +43,10 @@ async function verifyMapInteractivityFromData(contracts: Contract[]): Promise<{
   return { total: allPoints.length, wales: walesPoints.length };
 }
 
-async function tryPlaywrightScreenshots(): Promise<boolean> {
+async function runPlaywright(): Promise<{
+  countBefore: number;
+  countAfter: number;
+}> {
   const { chromium } = await import("playwright");
   mkdirSync(OUT_DIR, { recursive: true });
 
@@ -54,45 +55,54 @@ async function tryPlaywrightScreenshots(): Promise<boolean> {
 
   await page.goto(BASE, { waitUntil: "networkidle", timeout: 90_000 });
   await page.waitForSelector("text=ProcureWatch UK", { timeout: 30_000 });
-  await page.waitForSelector(".leaflet-container", { timeout: 60_000 });
+  await page.waitForSelector('[data-testid="procurement-map"]', { timeout: 60_000 });
+
+  const officialCount = parseInt(
+    (await page.getByTestId("map-marker-count").textContent()) ?? "0",
+    10
+  );
+  console.log(`Official view map-marker-count: ${officialCount}`);
+
+  await page.screenshot({ path: join(OUT_DIR, "dashboard-official.png") });
+
+  await page.getByRole("radio", { name: /Demonstration data/i }).check();
+  await page.waitForTimeout(2000);
+
+  const countBefore = parseInt(
+    (await page.getByTestId("map-marker-count").textContent()) ?? "0",
+    10
+  );
+  console.log(`Demonstration view map-marker-count (before Wales): ${countBefore}`);
+
+  await page.screenshot({ path: join(OUT_DIR, "dashboard.png") });
+
+  const govSelect = page.getByTestId("government-level-filter");
+  await govSelect.selectOption(["wales"]);
   await page.waitForTimeout(1500);
 
-  const dashboardPath = join(OUT_DIR, "dashboard.png");
-  await page.screenshot({ path: dashboardPath, fullPage: false });
-  console.log(`Screenshot saved: ${dashboardPath}`);
+  const countAfter = parseInt(
+    (await page.getByTestId("map-marker-count").textContent()) ?? "0",
+    10
+  );
+  console.log(`Demonstration view map-marker-count (Wales filter): ${countAfter}`);
 
-  const markersBefore = await page.locator(".leaflet-interactive").count();
-  console.log(`Map markers visible (before filter): ${markersBefore}`);
-
-  const walesOption = page.locator('select[multiple] option[value="wales"]').first();
-  const govSelect = page.locator("select[multiple]").first();
-  await govSelect.selectOption(["wales"]);
-  await page.waitForTimeout(1200);
-
-  const markersAfter = await page.locator(".leaflet-interactive").count();
-  console.log(`Map markers visible (Wales filter): ${markersAfter}`);
-
-  const mapFilteredPath = join(OUT_DIR, "dashboard-wales-filter.png");
-  await page.screenshot({ path: mapFilteredPath, fullPage: false });
-  console.log(`Filtered map screenshot: ${mapFilteredPath}`);
-
-  if (markersAfter >= markersBefore && markersBefore > 10) {
-    console.warn(
-      `Marker count did not decrease in DOM (${markersBefore} → ${markersAfter}); data-layer filter still verified`
+  if (countAfter >= countBefore) {
+    throw new Error(
+      `map-marker-count did not decrease after Wales filter (${countBefore} → ${countAfter})`
     );
   }
+
+  await page.screenshot({ path: join(OUT_DIR, "dashboard-wales-filter.png") });
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileToggle = page.getByRole("button", { name: /filters & navigation/i });
   if (await mobileToggle.isVisible()) {
     await mobileToggle.click();
-    const mobilePath = join(OUT_DIR, "mobile-filters.png");
-    await page.screenshot({ path: mobilePath, fullPage: false });
-    console.log(`Mobile screenshot: ${mobilePath}`);
+    await page.screenshot({ path: join(OUT_DIR, "mobile-filters.png") });
   }
 
   await browser.close();
-  return true;
+  return { countBefore, countAfter };
 }
 
 async function loadContractsFromPublic(): Promise<Contract[]> {
@@ -106,28 +116,19 @@ async function main() {
 
   const contracts = await loadContractsFromPublic();
   const mapCounts = await verifyMapInteractivityFromData(contracts);
-
-  let shotOk = false;
-  let shotError: string | null = null;
-  try {
-    shotOk = await tryPlaywrightScreenshots();
-  } catch (err) {
-    shotError = err instanceof Error ? err.message : String(err);
-    if (shotError.includes("Executable doesn't exist")) {
-      console.log("Run: npx playwright install chromium");
-    }
-    throw err;
-  }
+  const uiCounts = await runPlaywright();
 
   const report = {
     base_url: BASE,
     contracts_loaded: contracts.length,
     verified_records: contracts.filter((c) => !c.is_sample).length,
+    demo_records: contracts.filter((c) => c.is_sample).length,
     map_data_total: mapCounts.total,
     map_data_wales: mapCounts.wales,
+    ui_marker_count_before_wales: uiCounts.countBefore,
+    ui_marker_count_wales_filter: uiCounts.countAfter,
     map_filter_test: "passed",
-    screenshot: shotOk ? "dashboard.png" : "failed",
-    screenshot_error: shotError,
+    screenshot: "dashboard.png",
     timestamp: new Date().toISOString(),
   };
   writeFileSync(join(OUT_DIR, "browser-verification.json"), JSON.stringify(report, null, 2));

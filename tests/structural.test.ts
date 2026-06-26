@@ -26,7 +26,7 @@ describe("structural presence", () => {
     const constants = fs.readFileSync(path.join(ROOT, "lib", "constants.ts"), "utf-8");
     assert.match(methodology, /DATA_SOURCE_LABELS/);
     assert.match(methodology, /Three data tiers/i);
-    assert.match(methodology, /Verified \(live-fetched\)/i);
+    assert.match(methodology, /Official records \(default view\)/i);
     assert.match(methodology, /is_sample: true/i);
     assert.match(constants, /public_contracts_scotland/);
     assert.match(constants, /sell2wales/);
@@ -42,5 +42,7 @@ describe("structural presence", () => {
     assert.match(dashboard, /FilterPanel/);
     assert.match(dashboard, /ProcurementMap/);
     assert.match(dashboard, /filters & navigation/i);
+    assert.match(dashboard, /official/);
+    assert.match(dashboard, /scopeContracts/);
   });
 });

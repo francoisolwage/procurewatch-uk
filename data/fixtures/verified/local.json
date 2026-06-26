@@ -1,0 +1,34 @@
+[
+  {
+    "ocid": "ocds-fixture-local-birmingham-highways",
+    "notice_id": "27a24358-71b3-4389-9524-9c6cf8e3d695",
+    "title": "Birmingham City Council — Highways Maintenance Framework",
+    "buyer": "Birmingham City Council",
+    "supplier": "Amey LG Limited",
+    "award_date": "2019-04-01",
+    "value_gbp": 350000000,
+    "cpv_code": "45000000",
+    "category": "Construction work",
+    "description": "Fixture: OCDS-shaped Contracts Finder local authority award notice snapshot.",
+    "government_level": "local",
+    "data_source": "https://www.contractsfinder.service.gov.uk/",
+    "contracts_finder_url": "https://www.contractsfinder.service.gov.uk/Notice/27a24358-71b3-4389-9524-9c6cf8e3d695",
+    "is_sample": false
+  },
+  {
+    "ocid": "ocds-fixture-local-gmca-bus",
+    "notice_id": "9dfde832-2283-45d1-821b-19d933253093",
+    "title": "Greater Manchester Combined Authority — Bee Network Bus Franchising",
+    "buyer": "Greater Manchester Combined Authority",
+    "supplier": "Go North West Ltd",
+    "award_date": "2023-09-24",
+    "value_gbp": 520000000,
+    "cpv_code": "60000000",
+    "category": "Transport services",
+    "description": "Fixture: OCDS-shaped Contracts Finder local authority award notice snapshot.",
+    "government_level": "local",
+    "data_source": "https://www.contractsfinder.service.gov.uk/",
+    "contracts_finder_url": "https://www.contractsfinder.service.gov.uk/Notice/9dfde832-2283-45d1-821b-19d933253093",
+    "is_sample": false
+  }
+]

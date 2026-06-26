@@ -1,0 +1,34 @@
+[
+  {
+    "ocid": "ocds-fixture-central-mod-type26",
+    "notice_id": "34f173dd-5074-492e-85bc-03507cb63df9",
+    "title": "Ministry of Defence — Type 26 Frigate Manufacture Batch 1",
+    "buyer": "Ministry of Defence",
+    "supplier": "BAE Systems Surface Ships Limited",
+    "award_date": "2017-07-02",
+    "value_gbp": 3100000000,
+    "cpv_code": "45000000",
+    "category": "Construction work",
+    "description": "Fixture: OCDS-shaped Contracts Finder award notice snapshot.",
+    "government_level": "central",
+    "data_source": "https://www.contractsfinder.service.gov.uk/",
+    "contracts_finder_url": "https://www.contractsfinder.service.gov.uk/Notice/34f173dd-5074-492e-85bc-03507cb63df9",
+    "is_sample": false
+  },
+  {
+    "ocid": "ocds-fixture-central-dhsc-vaccine",
+    "notice_id": "c430b6dc-e262-4bf1-baae-2e68df40d49a",
+    "title": "DHSC — COVID-19 Vaccine Deployment Logistics",
+    "buyer": "Department of Health and Social Care",
+    "supplier": "SCCL (NHS Supply Chain)",
+    "award_date": "2020-11-20",
+    "value_gbp": 88000000,
+    "cpv_code": "85000000",
+    "category": "Health and social work",
+    "description": "Fixture: OCDS-shaped Contracts Finder award notice snapshot.",
+    "government_level": "central",
+    "data_source": "https://www.contractsfinder.service.gov.uk/",
+    "contracts_finder_url": "https://www.contractsfinder.service.gov.uk/Notice/c430b6dc-e262-4bf1-baae-2e68df40d49a",
+    "is_sample": false
+  }
+]

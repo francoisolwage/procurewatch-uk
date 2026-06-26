@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import Papa from "papaparse";
+import { mergeVerifiedAndDemo } from "../lib/data-pipeline";
 import { enrichContract } from "../lib/government";
 import { computeRiskScores } from "../lib/risk-scoring";
 import type { GovernmentLevel, RawContract } from "../lib/types";
@@ -47,7 +48,7 @@ const verified: RawContract[] = JSON.parse(fs.readFileSync(verifiedPath, "utf-8"
   (row: RawContract) => enrichContract(row, { isSample: false })
 );
 
-const combined = [...verified, ...raw];
+const combined = mergeVerifiedAndDemo(verified, raw);
 const contracts = computeRiskScores(combined);
 
 fs.mkdirSync(path.dirname(outPath), { recursive: true });

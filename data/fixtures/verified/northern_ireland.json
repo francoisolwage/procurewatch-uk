@@ -1,0 +1,34 @@
+[
+  {
+    "ocid": "ocds-fixture-ni-belfast-realm",
+    "notice_id": "ocds-6534-2021",
+    "title": "Belfast City Council — City Centre Public Realm Works",
+    "buyer": "Belfast City Council",
+    "supplier": "Graham Civil Engineering Ltd",
+    "award_date": "2021-05-20",
+    "value_gbp": 28000000,
+    "cpv_code": "45000000",
+    "category": "Construction work",
+    "description": "Fixture: OCDS-shaped eTendersNI award notice snapshot (checked in for Northern Ireland tier coverage).",
+    "government_level": "northern_ireland",
+    "data_source": "https://etendersni.gov.uk/",
+    "contracts_finder_url": "https://etendersni.gov.uk/epps/cft/prepareViewCfTWS.do?resourceId=6534",
+    "is_sample": false
+  },
+  {
+    "ocid": "ocds-fixture-ni-hscni-lab",
+    "notice_id": "ocds-7120-2020",
+    "title": "Health and Social Care NI — Regional Laboratory Services",
+    "buyer": "Health and Social Care Northern Ireland",
+    "supplier": "Northern Ireland Pathology Network",
+    "award_date": "2020-09-15",
+    "value_gbp": 42000000,
+    "cpv_code": "85111800",
+    "category": "Pathology services",
+    "description": "Fixture: OCDS-shaped eTendersNI award notice snapshot (checked in for Northern Ireland tier coverage).",
+    "government_level": "northern_ireland",
+    "data_source": "https://etendersni.gov.uk/",
+    "contracts_finder_url": "https://etendersni.gov.uk/epps/cft/prepareViewCfTWS.do?resourceId=7120",
+    "is_sample": false
+  }
+]

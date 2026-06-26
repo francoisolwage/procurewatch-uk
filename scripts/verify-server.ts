@@ -40,9 +40,6 @@ async function main() {
   await verifyOnce(1);
   await verifyOnce(2);
   console.log("Server verification passed (2/2)");
-  console.log(
-    "Note: headless browser unavailable; map interactivity verified via bundle + unit tests."
-  );
 }
 
 main().catch((err) => {

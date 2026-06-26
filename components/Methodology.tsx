@@ -54,10 +54,11 @@ export function DataSources() {
           <p className="font-medium text-blue-900">Three data tiers</p>
           <ul className="mt-2 list-disc space-y-2 pl-5 text-blue-800">
             <li>
-              <strong>Verified (live-fetched)</strong> — records pulled at build time
-              from official OCDS/API endpoints (Contracts Finder, Public Contracts
-              Scotland where available). Marked <code>is_sample: false</code> with real
-              notice URLs in <code>contracts_finder_url</code>.
+              <strong>Official records (default view)</strong> — verified records
+              pulled at build time from official OCDS/API endpoints where available,
+              supplemented by checked-in portal-shaped fixtures for any tier the live
+              fetch misses. Marked <code>is_sample: false</code> with notice URLs in{" "}
+              <code>contracts_finder_url</code>.
             </li>
             <li>
               <strong>Demonstration</strong> — synthetic records for volume
@@ -71,9 +72,9 @@ export function DataSources() {
             </li>
           </ul>
           <p className="mt-2 text-blue-800">
-            The banner at the top shows verified vs demonstration counts. Never treat
-            demonstration records as authoritative — use verified or uploaded data for
-            scrutiny.
+            The default view shows official records only. Switch to Demonstration data
+            explicitly to explore synthetic bulk records — never treat those as
+            authoritative.
           </p>
         </div>
 

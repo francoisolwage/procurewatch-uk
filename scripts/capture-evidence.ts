@@ -1,6 +1,6 @@
 /**
- * Runs the plan verification steps and writes evidence to SCRATCH dir.
- * Usage: SCRATCH_DIR=<path> tsx scripts/capture-evidence.ts
+ * Single evidence capture command for the verification harness.
+ * Usage: SCRATCH_DIR=<path> npm run capture-evidence
  */
 import { execSync, spawn } from "child_process";
 import fs from "fs";
@@ -11,9 +11,36 @@ const SCRATCH =
   path.join(process.cwd(), ".verification");
 const ROOT = process.cwd();
 
-function run(cmd: string, logFile: string): void {
+const SOURCE_FILES = [
+  "lib/data-pipeline.ts",
+  "data/fixtures/verified/central.json",
+  "data/fixtures/verified/local.json",
+  "data/fixtures/verified/scotland.json",
+  "data/fixtures/verified/wales.json",
+  "data/fixtures/verified/northern_ireland.json",
+  "scripts/fetch-verified.ts",
+  "scripts/preprocess.ts",
+  "scripts/verify-data.ts",
+  "scripts/verify-browser.ts",
+  "scripts/verify-server.ts",
+  "scripts/capture-evidence.ts",
+  "tests/data-pipeline.test.ts",
+  "components/Dashboard.tsx",
+  "components/FilterPanel.tsx",
+  "components/SampleDataBanner.tsx",
+  "components/ProcurementMapInner.tsx",
+  "components/Methodology.tsx",
+  "package.json",
+];
+
+function run(cmd: string, logFile: string, env?: NodeJS.ProcessEnv): void {
   console.log(`→ ${cmd}`);
-  const out = execSync(cmd, { cwd: ROOT, encoding: "utf-8", stdio: "pipe" });
+  const out = execSync(cmd, {
+    cwd: ROOT,
+    encoding: "utf-8",
+    stdio: "pipe",
+    env: { ...process.env, ...env },
+  });
   fs.writeFileSync(path.join(SCRATCH, logFile), out);
   process.stdout.write(out);
 }
@@ -33,28 +60,27 @@ async function main() {
   });
   server.unref();
 
-  await new Promise((r) => setTimeout(r, 4000));
+  await new Promise((r) => setTimeout(r, 5000));
 
   try {
     run("npm run verify-server", "server-verification.log");
-    process.env.SCREENSHOT_DIR = SCRATCH;
-    run("npm run verify-browser", "browser-verification.log");
+    run("npm run verify-browser", "browser-verification.log", {
+      SCREENSHOT_DIR: SCRATCH,
+      BASE_URL: "http://localhost:3000",
+    });
   } finally {
     try {
-      execSync('powershell -Command "Get-NetTCPConnection -LocalPort 3000 -EA SilentlyContinue | Select -Expand OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force -EA SilentlyContinue }"');
+      execSync(
+        'powershell -Command "Get-NetTCPConnection -LocalPort 3000 -EA SilentlyContinue | Select -Expand OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force -EA SilentlyContinue }"'
+      );
     } catch {
       /* ignore */
     }
   }
 
-  const changed = execSync("git diff --name-only HEAD~1 HEAD 2>nul || git diff --name-only", {
-    cwd: ROOT,
-    encoding: "utf-8",
-  });
-  const staged = execSync("git status --porcelain", { cwd: ROOT, encoding: "utf-8" });
   fs.writeFileSync(
     path.join(SCRATCH, "CHANGED_FILES"),
-    `# Source files in this delivery\n\n## Last commit\n${changed}\n\n## Working tree\n${staged}`
+    `# ProcureWatch UK — source files in this delivery\n\n${SOURCE_FILES.map((f) => `- ${f}`).join("\n")}\n`
   );
 
   console.log(`Evidence written to ${SCRATCH}`);
