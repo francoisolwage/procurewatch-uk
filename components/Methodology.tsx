@@ -51,20 +51,29 @@ export function DataSources() {
         </p>
 
         <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
-          <p className="font-medium text-blue-900">Three data tiers</p>
+          <p className="font-medium text-blue-900">Data provenance tiers</p>
           <ul className="mt-2 list-disc space-y-2 pl-5 text-blue-800">
             <li>
-              <strong>Official records (default view)</strong> — verified records
-              pulled at build time from official OCDS/API endpoints where available,
-              supplemented by checked-in portal-shaped fixtures for any tier the live
-              fetch misses. Marked <code>is_sample: false</code> with notice URLs in{" "}
-              <code>contracts_finder_url</code>.
+              <strong>Full national dataset (default view)</strong> — the union of
+              live OCDS pulls and portal fixture snapshots, covering all five
+              government tiers with official attribution. Switch to narrower views
+              below when you need live-only or fixture-only scrutiny.
             </li>
             <li>
-              <strong>Demonstration</strong> — synthetic records for volume
-              exploration, marked <code>is_sample: true</code> with{" "}
-              <code>DEMO-</code> notice IDs and descriptions stating they are not
-              official notices.
+              <strong>Live OCDS</strong> — records pulled at build time from Contracts
+              Finder / PCS APIs where reachable. Marked{" "}
+              <code>data_provenance: live_ocds</code>.
+            </li>
+            <li>
+              <strong>Portal fixture snapshots</strong> — checked-in OCDS-shaped
+              examples for tier coverage when live APIs fail (e.g. Wales/NI). Marked{" "}
+              <code>data_provenance: portal_fixture</code> and{" "}
+              <code>ocds-fixture-*</code> IDs — explicitly not live portal exports.
+            </li>
+            <li>
+              <strong>Demonstration</strong> — synthetic bulk data,{" "}
+              <code>data_provenance: demonstration</code>, <code>DEMO-</code> notice
+              IDs.
             </li>
             <li>
               <strong>User upload</strong> — your CSV/JSON exports from any portal
@@ -72,9 +81,9 @@ export function DataSources() {
             </li>
           </ul>
           <p className="mt-2 text-blue-800">
-            The default view shows official records only. Switch to Demonstration data
-            explicitly to explore synthetic bulk records — never treat those as
-            authoritative.
+            The default view is the full national dataset (live + fixtures).
+            Demonstration data and uploads require an explicit sidebar switch — never
+            treat them as live official exports.
           </p>
         </div>
 

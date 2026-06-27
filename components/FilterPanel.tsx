@@ -3,7 +3,7 @@
 import { GOVERNMENT_ERAS } from "@/lib/constants";
 import { GOVERNMENT_LEVEL_LABELS } from "@/lib/government";
 import type { Filters, GovernmentLevel, PageSection } from "@/lib/types";
-import type { DataViewMode } from "./Dashboard";
+import type { DataViewMode } from "@/lib/data-pipeline";
 
 const GOVERNMENT_LEVELS: GovernmentLevel[] = [
   "central",
@@ -25,7 +25,9 @@ interface Props {
   sections: PageSection[];
   onSectionChange: (s: PageSection) => void;
   dataMode: DataViewMode;
-  onOfficialMode: () => void;
+  onNationalMode: () => void;
+  onLiveMode: () => void;
+  onFixturesMode: () => void;
   onDemonstrationMode: () => void;
   onUploadMode: () => void;
   onUpload: (file: File) => void;
@@ -44,7 +46,9 @@ export default function FilterPanel({
   sections,
   onSectionChange,
   dataMode,
-  onOfficialMode,
+  onNationalMode,
+  onLiveMode,
+  onFixturesMode,
   onDemonstrationMode,
   onUploadMode,
   onUpload,
@@ -84,10 +88,28 @@ export default function FilterPanel({
           <input
             type="radio"
             name="data-view-mode"
-            checked={dataMode === "official"}
-            onChange={onOfficialMode}
+            checked={dataMode === "national"}
+            onChange={onNationalMode}
           />
-          Official records (verified)
+          Full national dataset (live + fixtures)
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name="data-view-mode"
+            checked={dataMode === "live"}
+            onChange={onLiveMode}
+          />
+          Live OCDS records only
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name="data-view-mode"
+            checked={dataMode === "fixtures"}
+            onChange={onFixturesMode}
+          />
+          Portal fixture snapshots
         </label>
         <label className="flex items-center gap-2">
           <input
@@ -281,9 +303,9 @@ export default function FilterPanel({
         </div>
       </div>
 
-      <p className="text-xs text-gov-slate">
-        Showing <strong>{filteredCount.toLocaleString()}</strong> of{" "}
-        <strong>{totalCount.toLocaleString()}</strong> contracts
+      <p className="text-xs text-gov-slate" data-testid="filter-scope-summary">
+        Showing <strong data-testid="filter-visible-count">{filteredCount.toLocaleString()}</strong> of{" "}
+        <strong data-testid="filter-scope-count">{totalCount.toLocaleString()}</strong> contracts
       </p>
     </div>
   );

@@ -5,6 +5,11 @@ import path from "path";
 import {
   parseOcdsRelease,
   supplementMissingVerifiedTiers,
+  appendFixtureSnapshots,
+  filterNationalDataset,
+  isNationalRecord,
+  scopeContractsForMode,
+  DEFAULT_DATA_VIEW_MODE,
   mergeVerifiedAndDemo,
   assertLabelling,
   countVerifiedByTier,
@@ -96,6 +101,93 @@ describe("supplementMissingVerifiedTiers", () => {
   });
 });
 
+describe("appendFixtureSnapshots", () => {
+  it("adds central/local fixtures when live fetch already covers those tiers", () => {
+    const live: RawContract[] = [
+      {
+        ocid: "ocds-live-central",
+        notice_id: "live-central-1",
+        title: "Central contract",
+        buyer: "HM Treasury",
+        supplier: "Supplier A",
+        award_date: "2024-01-01",
+        value_gbp: 100000,
+        cpv_code: "72000000",
+        category: "IT",
+        description: "Live central",
+        government_level: "central",
+        is_sample: false,
+        data_provenance: "live_ocds",
+      },
+      {
+        ocid: "ocds-live-central-2",
+        notice_id: "live-central-2",
+        title: "Central contract 2",
+        buyer: "HM Treasury",
+        supplier: "Supplier B",
+        award_date: "2024-02-01",
+        value_gbp: 200000,
+        cpv_code: "72000000",
+        category: "IT",
+        description: "Live central 2",
+        government_level: "central",
+        is_sample: false,
+        data_provenance: "live_ocds",
+      },
+    ];
+    const fixtures = {
+      central: loadFixtureTier("central"),
+      local: loadFixtureTier("local"),
+    };
+    const result = appendFixtureSnapshots(live, fixtures, 2);
+    const fixtureCentral = result.filter(
+      (c) => c.government_level === "central" && c.data_provenance === "portal_fixture"
+    );
+    const fixtureLocal = result.filter(
+      (c) => c.government_level === "local" && c.data_provenance === "portal_fixture"
+    );
+    assert.equal(fixtureCentral.length, 2);
+    assert.equal(fixtureLocal.length, 2);
+  });
+});
+
+describe("filterNationalDataset", () => {
+  it("includes live_ocds and portal_fixture but excludes demonstration", () => {
+    const mixed = [
+      { data_provenance: "live_ocds" as const, government_level: "central" as const },
+      { data_provenance: "portal_fixture" as const, government_level: "wales" as const },
+      { data_provenance: "demonstration" as const, government_level: "local" as const },
+      { data_provenance: "user_upload" as const, government_level: "scotland" as const },
+    ];
+    const national = filterNationalDataset(mixed);
+    assert.equal(national.length, 2);
+    assert.ok(national.every(isNationalRecord));
+  });
+});
+
+describe("scopeContractsForMode", () => {
+  const mixed = [
+    { data_provenance: "live_ocds" as const },
+    { data_provenance: "portal_fixture" as const },
+    { data_provenance: "demonstration" as const },
+    { data_provenance: "user_upload" as const },
+  ];
+
+  it("defaults to national union", () => {
+    assert.equal(DEFAULT_DATA_VIEW_MODE, "national");
+    const scoped = scopeContractsForMode("national", mixed);
+    assert.equal(scoped.length, 2);
+    assert.ok(scoped.every(isNationalRecord));
+  });
+
+  it("scopes live, fixtures, and demonstration independently", () => {
+    assert.equal(scopeContractsForMode("live", mixed).length, 1);
+    assert.equal(scopeContractsForMode("fixtures", mixed).length, 1);
+    assert.equal(scopeContractsForMode("demonstration", mixed).length, 1);
+    assert.equal(scopeContractsForMode("upload", mixed).length, 4);
+  });
+});
+
 describe("mergeVerifiedAndDemo", () => {
   it("labels demo and verified correctly", () => {
     const verified: RawContract[] = loadFixtureTier("wales").slice(0, 1);
@@ -125,14 +217,18 @@ describe("assertLabelling", () => {
   it("passes for correctly labelled mixed set", () => {
     const result = assertLabelling([
       {
+        ocid: "ocds-live-001",
         is_sample: false,
         notice_id: "REAL-1",
         description: "Official notice",
+        data_provenance: "live_ocds",
       },
       {
+        ocid: "demo-001",
         is_sample: true,
         notice_id: "DEMO-1",
         description: "Representative demonstration record — not an official notice.",
+        data_provenance: "demonstration",
       },
     ]);
     assert.equal(result.ok, true);

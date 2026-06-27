@@ -1,6 +1,9 @@
 /**
- * Single evidence capture command for the verification harness.
- * Usage: SCRATCH_DIR=<path> npm run capture-evidence
+ * Evidence capture gate-runner.
+ * Usage: SCRATCH_DIR=<path> [CAPTURE_RUN=1|2] npm run capture-evidence
+ *
+ * Run twice as separate shell invocations. After both runs, execute:
+ *   npm run write-delivery-evidence
  */
 import { execSync, spawn } from "child_process";
 import fs from "fs";
@@ -10,31 +13,10 @@ const SCRATCH =
   process.env.SCRATCH_DIR ??
   path.join(process.cwd(), ".verification");
 const ROOT = process.cwd();
+const CAPTURE_RUN = process.env.CAPTURE_RUN ?? "1";
 
-const SOURCE_FILES = [
-  "lib/data-pipeline.ts",
-  "data/fixtures/verified/central.json",
-  "data/fixtures/verified/local.json",
-  "data/fixtures/verified/scotland.json",
-  "data/fixtures/verified/wales.json",
-  "data/fixtures/verified/northern_ireland.json",
-  "scripts/fetch-verified.ts",
-  "scripts/preprocess.ts",
-  "scripts/verify-data.ts",
-  "scripts/verify-browser.ts",
-  "scripts/verify-server.ts",
-  "scripts/capture-evidence.ts",
-  "tests/data-pipeline.test.ts",
-  "components/Dashboard.tsx",
-  "components/FilterPanel.tsx",
-  "components/SampleDataBanner.tsx",
-  "components/ProcurementMapInner.tsx",
-  "components/Methodology.tsx",
-  "package.json",
-];
-
-function run(cmd: string, logFile: string, env?: NodeJS.ProcessEnv): void {
-  console.log(`→ ${cmd}`);
+function run(cmd: string, logFile: string, env?: NodeJS.ProcessEnv): string {
+  console.log(`→ ${cmd} → ${logFile}`);
   const out = execSync(cmd, {
     cwd: ROOT,
     encoding: "utf-8",
@@ -43,15 +25,32 @@ function run(cmd: string, logFile: string, env?: NodeJS.ProcessEnv): void {
   });
   fs.writeFileSync(path.join(SCRATCH, logFile), out);
   process.stdout.write(out);
+  return out;
 }
 
-async function main() {
-  fs.mkdirSync(SCRATCH, { recursive: true });
+function runRepeated(cmd: string, logBase: string, times = 2): void {
+  const outputs: string[] = [];
+  for (let i = 1; i <= times; i++) {
+    outputs.push(run(cmd, `${logBase}-run${i}.log`));
+  }
+  fs.writeFileSync(
+    path.join(SCRATCH, `${logBase}.log`),
+    outputs.map((o, i) => `=== run ${i + 1} ===\n${o}`).join("\n\n")
+  );
+}
 
-  run("npm run build", "build.log");
-  run("npm test", "unit-tests.log");
-  run("npm run verify-data", "data-verification.log");
+function stopServer(): void {
+  try {
+    execSync(
+      'powershell -Command "Get-NetTCPConnection -LocalPort 3000 -EA SilentlyContinue | Select -Expand OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force -EA SilentlyContinue }"',
+      { cwd: ROOT, stdio: "pipe" }
+    );
+  } catch {
+    /* ignore */
+  }
+}
 
+function startServer(): ReturnType<typeof spawn> {
   const server = spawn("npm", ["run", "start"], {
     cwd: ROOT,
     stdio: "ignore",
@@ -59,31 +58,60 @@ async function main() {
     shell: true,
   });
   server.unref();
+  return server;
+}
 
-  await new Promise((r) => setTimeout(r, 5000));
+async function main() {
+  fs.mkdirSync(SCRATCH, { recursive: true });
+
+  const header = [
+    `CAPTURE_RUN=${CAPTURE_RUN}`,
+    `pid=${process.pid}`,
+    `timestamp=${new Date().toISOString()}`,
+    "",
+  ].join("\n");
+  fs.writeFileSync(
+    path.join(SCRATCH, `capture-evidence-run${CAPTURE_RUN}.log`),
+    header
+  );
+  console.log(header.trim());
+
+  runRepeated("npm run build", "build", 2);
+  runRepeated("npm test", "unit-tests", 2);
+  run("npm run verify-data", "data-verification.log");
+
+  stopServer();
+  await new Promise((r) => setTimeout(r, 2000));
+  const server = startServer();
+  console.log(`server_pid=${server.pid ?? "unknown"}`);
+  await new Promise((r) => setTimeout(r, 6000));
 
   try {
     run("npm run verify-server", "server-verification.log");
-    run("npm run verify-browser", "browser-verification.log", {
+    run(`npm run verify-browser`, `browser-verification-run${CAPTURE_RUN}.log`, {
       SCREENSHOT_DIR: SCRATCH,
       BASE_URL: "http://localhost:3000",
+      BROWSER_RUN: CAPTURE_RUN,
     });
-  } finally {
-    try {
-      execSync(
-        'powershell -Command "Get-NetTCPConnection -LocalPort 3000 -EA SilentlyContinue | Select -Expand OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force -EA SilentlyContinue }"'
+    const report = path.join(SCRATCH, "browser-verification.json");
+    if (fs.existsSync(report)) {
+      fs.copyFileSync(
+        report,
+        path.join(SCRATCH, `browser-verification-run${CAPTURE_RUN}.json`)
       );
-    } catch {
-      /* ignore */
     }
+  } finally {
+    stopServer();
+    await new Promise((r) => setTimeout(r, 1500));
   }
 
-  fs.writeFileSync(
-    path.join(SCRATCH, "CHANGED_FILES"),
-    `# ProcureWatch UK — source files in this delivery\n\n${SOURCE_FILES.map((f) => `- ${f}`).join("\n")}\n`
+  const footer = `\ncompleted CAPTURE_RUN=${CAPTURE_RUN} at ${new Date().toISOString()}\n`;
+  fs.appendFileSync(
+    path.join(SCRATCH, `capture-evidence-run${CAPTURE_RUN}.log`),
+    footer
   );
-
   console.log(`Evidence written to ${SCRATCH}`);
+  console.log("Run npm run write-delivery-evidence to emit CHANGED_FILES + patch.");
 }
 
 main().catch((err) => {

@@ -25,12 +25,29 @@ describe("structural presence", () => {
     );
     const constants = fs.readFileSync(path.join(ROOT, "lib", "constants.ts"), "utf-8");
     assert.match(methodology, /DATA_SOURCE_LABELS/);
-    assert.match(methodology, /Three data tiers/i);
-    assert.match(methodology, /Official records \(default view\)/i);
-    assert.match(methodology, /is_sample: true/i);
+    assert.match(methodology, /Data provenance tiers/i);
+    assert.match(methodology, /Full national dataset \(default view\)/i);
+    assert.match(methodology, /data_provenance: demonstration/i);
+    assert.match(methodology, /data_provenance: portal_fixture/i);
     assert.match(constants, /public_contracts_scotland/);
     assert.match(constants, /sell2wales/);
     assert.match(constants, /etenders_ni/);
+  });
+
+  it("exposes national default in data pipeline and filter panel", () => {
+    const pipeline = fs.readFileSync(
+      path.join(ROOT, "lib", "data-pipeline.ts"),
+      "utf-8"
+    );
+    const filterPanel = fs.readFileSync(
+      path.join(ROOT, "components", "FilterPanel.tsx"),
+      "utf-8"
+    );
+    assert.match(pipeline, /DEFAULT_DATA_VIEW_MODE.*=.*"national"/);
+    assert.match(pipeline, /scopeContractsForMode/);
+    assert.match(pipeline, /filterNationalDataset/);
+    assert.match(filterPanel, /Full national dataset/i);
+    assert.match(filterPanel, /data-testid="filter-scope-count"/);
   });
 
   it("dashboard includes Project Map navigation", () => {
@@ -42,7 +59,9 @@ describe("structural presence", () => {
     assert.match(dashboard, /FilterPanel/);
     assert.match(dashboard, /ProcurementMap/);
     assert.match(dashboard, /filters & navigation/i);
-    assert.match(dashboard, /official/);
+    assert.match(dashboard, /DEFAULT_DATA_VIEW_MODE/);
+    assert.match(dashboard, /scopeContractsForMode/);
     assert.match(dashboard, /scopeContracts/);
+    assert.match(dashboard, /portal_fixture/);
   });
 });

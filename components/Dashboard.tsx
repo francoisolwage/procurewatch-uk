@@ -19,11 +19,18 @@ import FilterPanel from "./FilterPanel";
 import { RiskMethodology, DataSources, EraKey } from "./Methodology";
 import { RED_FLAG_DEFINITIONS } from "@/lib/constants";
 import { applyFilters, contractsToCSV, getRangeWarning } from "@/lib/filters";
+import {
+  countByProvenance,
+  DEFAULT_DATA_VIEW_MODE,
+  filterNationalDataset,
+  scopeContractsForMode,
+  type DataViewMode,
+} from "@/lib/data-pipeline";
 import { loadSampleContracts, parseCSV, parseJSON } from "@/lib/data-loader";
 import { formatGBP } from "@/lib/format";
 import type { Contract, Filters, PageSection } from "@/lib/types";
 
-export type DataViewMode = "official" | "demonstration" | "upload";
+export type { DataViewMode };
 
 function boundsFromContracts(contracts: Contract[]) {
   if (!contracts.length) {
@@ -52,21 +59,21 @@ const SECTIONS: PageSection[] = [
 
 export default function Dashboard() {
   const [allContracts, setAllContracts] = useState<Contract[]>([]);
+  const [dataReady, setDataReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [section, setSection] = useState<PageSection>("Overview");
   const [selected, setSelected] = useState<Contract | null>(null);
-  const [dataMode, setDataMode] = useState<DataViewMode>("official");
+  const [dataMode, setDataMode] = useState<DataViewMode>(DEFAULT_DATA_VIEW_MODE);
   const [uploading, setUploading] = useState(false);
   const [deptChoice, setDeptChoice] = useState("All departments");
   const [tableKey, setTableKey] = useState(0);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
 
-  const scopeContracts = useMemo(() => {
-    if (dataMode === "upload") return allContracts;
-    if (dataMode === "demonstration") return allContracts.filter((c) => c.is_sample);
-    return allContracts.filter((c) => !c.is_sample);
-  }, [allContracts, dataMode]);
+  const scopeContracts = useMemo(
+    () => scopeContractsForMode(dataMode, allContracts),
+    [allContracts, dataMode]
+  );
 
   const bounds = useMemo(
     () => boundsFromContracts(scopeContracts.length ? scopeContracts : allContracts),
@@ -89,17 +96,23 @@ export default function Dashboard() {
   useEffect(() => {
     loadSampleContracts()
       .then((data) => {
+        const national = filterNationalDataset(data);
+        const b = boundsFromContracts(national.length ? national : data);
         setAllContracts(data);
-        setDataMode("official");
-        const official = data.filter((c) => !c.is_sample);
-        const b = boundsFromContracts(official.length ? official : data);
-        setFilters((f) => ({
-          ...f,
+        setDataMode(DEFAULT_DATA_VIEW_MODE);
+        setFilters({
+          departments: [],
+          governmentLevels: [],
           yearMin: b.yearMin,
           yearMax: b.yearMax,
           valueMin: b.valueMin,
           valueMax: b.valueMax,
-        }));
+          search: "",
+          flaggedOnly: false,
+          era: "All",
+          sortBy: "Highest value",
+        });
+        setDataReady(true);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -110,15 +123,13 @@ export default function Dashboard() {
     [scopeContracts]
   );
 
-  const verifiedCount = useMemo(
-    () => allContracts.filter((c) => !c.is_sample).length,
+  const provenanceCounts = useMemo(
+    () => countByProvenance(allContracts),
     [allContracts]
   );
-
-  const demoCount = useMemo(
-    () => allContracts.filter((c) => c.is_sample).length,
-    [allContracts]
-  );
+  const liveCount = provenanceCounts.live_ocds;
+  const fixtureCount = provenanceCounts.portal_fixture;
+  const demoCount = provenanceCounts.demonstration;
 
   const filtered = useMemo(
     () => applyFilters(scopeContracts, filters),
@@ -159,12 +170,7 @@ export default function Dashboard() {
   };
 
   const applyModeBounds = (mode: DataViewMode, data: Contract[]) => {
-    const subset =
-      mode === "demonstration"
-        ? data.filter((c) => c.is_sample)
-        : mode === "official"
-          ? data.filter((c) => !c.is_sample)
-          : data;
+    const subset = scopeContractsForMode(mode, data);
     const b = boundsFromContracts(subset.length ? subset : data);
     setFilters((f) => ({
       ...f,
@@ -218,7 +224,9 @@ export default function Dashboard() {
       setMobilePanelOpen(false);
     },
     dataMode,
-    onOfficialMode: () => switchDataMode("official"),
+    onNationalMode: () => switchDataMode("national"),
+    onLiveMode: () => switchDataMode("live"),
+    onFixturesMode: () => switchDataMode("fixtures"),
     onDemonstrationMode: () => switchDataMode("demonstration"),
     onUploadMode: () => switchDataMode("upload"),
     onUpload: handleUpload,
@@ -232,10 +240,12 @@ export default function Dashboard() {
     onFilterChange: updateFilter,
   };
 
-  if (loading && !allContracts.length) {
+  if (!dataReady) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gov-surface">
-        <p className="text-gov-slate">Loading procurement data…</p>
+        <p className="text-gov-slate">
+          {error ?? "Loading procurement data…"}
+        </p>
       </div>
     );
   }
@@ -255,7 +265,8 @@ export default function Dashboard() {
           <Header />
           <SampleDataBanner
             dataMode={dataMode}
-            verifiedCount={verifiedCount}
+            liveCount={liveCount}
+            fixtureCount={fixtureCount}
             demoCount={demoCount}
             scopeCount={scopeContracts.length}
           />
