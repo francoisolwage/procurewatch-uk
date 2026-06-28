@@ -15,7 +15,8 @@
     "verify-server": "tsx scripts/verify-server.ts",
     "verify-browser": "tsx scripts/verify-browser.ts",
     "capture-evidence": "tsx scripts/capture-evidence.ts",
-    "write-delivery-evidence": "tsx scripts/write-delivery-evidence.ts"
+    "write-delivery-evidence": "tsx scripts/write-delivery-evidence.ts",
+    "run-verification-plan": "tsx scripts/run-verification-plan.ts"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
