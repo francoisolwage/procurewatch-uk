@@ -281,8 +281,10 @@ function auditStep5(): StepResult {
     path.join(ROOT, "lib/data-pipeline.ts"),
     "utf-8"
   );
-  if (/DEFAULT_DATA_VIEW_MODE\s*=\s*"national"/.test(pipeline)) {
-    quotes.push('lib/data-pipeline.ts: DEFAULT_DATA_VIEW_MODE = "national"');
+  if (/DEFAULT_DATA_VIEW_MODE[^=]*=\s*"national"/.test(pipeline)) {
+    quotes.push(
+      'lib/data-pipeline.ts: DEFAULT_DATA_VIEW_MODE: DataViewMode = "national"'
+    );
   } else {
     pass = false;
     notes.push("DEFAULT_DATA_VIEW_MODE not national");
